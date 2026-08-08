@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -38,8 +38,10 @@ import SecurityPanel from "@/components/tttbuilder/SecurityPanel";
 import AnchorsPanel from "@/components/tttbuilder/AnchorsPanel";
 import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal";
+import OnboardingModal, { isStandalone } from "@/components/tttbuilder/OnboardingModal";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
+const STANDALONE = isStandalone();
 
 const SCOPE_RULE = `
 
@@ -855,6 +857,20 @@ function TTTBuilderStudio() {
                 <Github className="w-3.5 h-3.5" />
                 Clone TTT Builder repo
               </motion.button>
+
+              {/* Standalone only: re-open the setup/onboarding wizard */}
+              {STANDALONE && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Setup model & keys
+                </motion.button>
+              )}
               </div>
               </motion.div>
         ) : (
@@ -1107,7 +1123,7 @@ function TTTBuilderStudio() {
                             </div>
                           )}
                           <div className="flex-1 min-h-0 relative">
-                            <E2BLivePanel files={files} autoStart onUrlChange={setLiveUrl} onFixBuild={fixBuild} />
+                            <E2BLivePanel files={files} autoStart onUrlChange={setLiveUrl} onFixBuild={fixBuild} onOpenOnboarding={() => window.dispatchEvent(new Event("ttt-open-onboarding"))} />
                           </div>
                         </div>
                       )}
@@ -1194,7 +1210,7 @@ function TTTBuilderStudio() {
                         {dashSection === "code" && loading && (
                           <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
                         )}
-                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} onFixBuild={fixBuild} />}
+                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} onFixBuild={fixBuild} onOpenOnboarding={() => window.dispatchEvent(new Event("ttt-open-onboarding"))} />}
                         {dashSection === "agents" && (
                           <div className="h-full overflow-y-auto">
                             <AgentsPanel onGenerate={generate} loading={loading} files={files} />
@@ -1360,6 +1376,8 @@ function TTTBuilderStudio() {
       />
 
       <CloneBuilderRepoModal open={showCloneModal} onClose={() => setShowCloneModal(false)} />
+
+      {STANDALONE && <OnboardingModal />}
 
       {showFullscreen && (html || liveUrl) && (
         <FullscreenPreview
