@@ -13,6 +13,7 @@ function unavailable(name, hint) {
 }
 
 export const base44 = {
+  __standalone: true,
   auth: {
     me: async () => LOCAL_ADMIN,
     isAuthenticated: async () => true,
