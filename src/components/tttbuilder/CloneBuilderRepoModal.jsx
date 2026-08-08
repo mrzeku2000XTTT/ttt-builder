@@ -21,8 +21,13 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => { if (open) { setResult(null); setError(""); setCopied(false); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    setResult(null); setError(""); setCopied(false);
+    base44.auth.me().then(u => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+  }, [open]);
 
   if (!open) return null;
 
@@ -84,8 +89,8 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
           </p>
         </div>
 
-        {/* Sync section (admin) */}
-        {!result ? (
+        {/* Sync section (admin only) */}
+        {isAdmin && !result && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-xs text-white/50">
               <RefreshCw className="w-3.5 h-3.5" />
@@ -112,7 +117,8 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
               </button>
             </div>
           </div>
-        ) : (
+        )}
+        {result && (
           <div className="text-center py-3">
             <CheckCircle className="w-10 h-10 text-[#70C7BA] mx-auto mb-3" />
             <p className="font-bold text-white mb-1">Synced!</p>
@@ -124,6 +130,11 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
             </a>
             <button onClick={onClose} className="block w-full mt-3 h-9 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors">Close</button>
           </div>
+        )}
+        {!isAdmin && (
+          <p className="text-center text-[11px] text-white/30 leading-relaxed">
+            This repo is maintained by the TTT platform owner. Clone it to run the builder locally with your own keys.
+          </p>
         )}
       </div>
     </div>

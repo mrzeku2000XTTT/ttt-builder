@@ -1,81 +1,149 @@
-# TTT Builder
+<div align="center">
 
-Open-source AI app builder for Kaspa. Describe what you want and TTT Builder generates a complete, production-quality multi-file app with the Kaspa wallet protocol built in. **Bring your own model keys — no integration credits, no hosted backend required.**
+# ⚡ TTT Builder
 
-## Quick start (local browser)
+### The first Kaspa-native vibe-coding platform.
+
+Describe it. Ship it. Every app comes with a real Kaspa wallet wired in — keys generated locally, transactions signed in the browser, zero custody, zero servers.
+
+**Bring your own model keys. No integration credits. No hosted backend. No lock-in.**
+
+<br />
 
 ```bash
-git clone https://github.com/<owner>/ttt-builder.git
+git clone https://github.com/mrzeku2000XTTT/ttt-builder.git
+cd ttt-builder && npm install && npm run dev
+```
+
+<br />
+
+**Kaspa** · **Open-source** · **BYO-keys** · **Local-first** · **MIT**
+
+</div>
+
+---
+
+> **TTT Builder** turns a single prompt into a complete, production-quality multi-file application — and every app it ships has the Kaspa wallet protocol baked in at the framework level. It is the open-source, self-hostable core of the TTT super-app: a vibe-coding studio for the Kaspa ecosystem that anyone can clone, brand, and run on their own machine with their own model keys.
+
+## ✨ Why TTT Builder
+
+| | |
+|---|---|
+| 🟣 **Kaspa-first, not Kaspa-bolted-on** | The wallet protocol is injected at build time — every generated app gets a real, local-only Kaspa wallet (BIP39 seed → WIF → signed transactions) with a strict, enforced UI pattern. No extensions, no custody, no floating panels. |
+| 🧠 **Bring your own brain** | The build loop calls **your** model directly from the browser — OpenRouter, DeepSeek, Ollama, or any OpenAI-compatible endpoint. Keys live in your localStorage and go straight to the provider. They never touch a server. |
+| 🪶 **Local-first by design** | Projects, wallet keys, and memory persist in the browser. No account, no cloud sync, no telemetry. Your workspace is yours. |
+| 🎬 **Multi-agent orchestration** | A planner breaks your request into scoped file-editing subagents; a repair agent fixes missing imports; a reviewer reverts unrelated changes. Surgical, not wholesale. |
+| 🖼️ **Live preview** | Generated apps render live in an isolated sandbox. Static HTML/CSS/JS previews in-browser; wire your own E2B key for full npm-project sandboxing. |
+| 🚀 **Ship anywhere** | Standard Vite + React output. Deploy to Vercel, Netlify, Cloudflare Pages, your own server, or Docker — one `npm run build` away. |
+
+## 🚀 Quick start
+
+```bash
+git clone https://github.com/mrzeku2000XTTT/ttt-builder.git
 cd ttt-builder
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 — the builder loads in your browser.
+Open **http://localhost:3000** — the studio loads in your browser. No login, no config.
 
-## Add your model (open-source / bring-your-own keys)
+### Add your model
 
-The builder runs on YOUR models — open-source or any OpenAI-compatible endpoint. Keys live only in your browser (localStorage) and go straight to the provider. They never touch a server.
+Open the builder → model selector (top-right of the chat) → **+ Add open model**. Pick a provider:
 
-1. Open the builder → model selector (top-right of the chat) → **+ Add open model**.
-2. Pick a provider:
-   - **OpenRouter** (recommended — free + paid models, browser-friendly CORS): key from openrouter.ai/keys, model e.g. `deepseek/deepseek-chat-v3.1:free`
-   - **DeepSeek**: key from platform.deepseek.com, model `deepseek-chat`
-   - **Ollama** (local, no key): run `ollama serve`, model e.g. `llama3.1`
-   - **Custom**: any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp server)
-3. Start building — describe your app and hit Build.
+| Provider | Where to get a key | Example model | Notes |
+|---|---|---|---|
+| **OpenRouter** *(recommended)* | [openrouter.ai/keys](https://openrouter.ai/keys) | `deepseek/deepseek-chat-v3.1:free` | Free + paid models, browser-friendly CORS |
+| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com) | `deepseek-chat` | Best price/perf for code |
+| **Ollama** *(local, no key)* | run `ollama serve` | `llama3.1` | 100% local, zero cost, zero network |
+| **Custom** | — | — | Any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp) |
 
-> The core build loop calls your provider directly from the browser. Hosted models (prefixed `ttt_agent_1`, `claude_*`, `gpt_*`, `gemini_*`) are NOT available in this self-hosted build — use the Open Models tab.
+> The core build loop calls your provider directly from the browser. Hosted models (`claude_*`, `gpt_*`, `gemini_*`) are **not** available in this self-hosted build — that's the point: you bring the keys, you own the cost.
 
-## Run on any platform
+## 🏗️ Architecture
 
-This is a standard Vite + React app — deploy it anywhere:
-
-- **Vercel**: `vercel` (auto-detects Vite)
-- **Netlify**: build `npm run build`, publish `dist/`
-- **Cloudflare Pages**: build `npm run build`, output `dist`
-- **Your own server**: `npm run build && npm run preview`, or serve `dist/` with any static host
-- **Docker**: `npm run build` then serve `dist/` with nginx/caddy
-
-## Desktop CLI
-
-```bash
-git clone https://github.com/<owner>/ttt-builder.git
-cd ttt-builder
-npm install
-npm run dev   # http://localhost:3000
+```
+┌──────────────────────────────────────────────┐
+│  TTT Builder Studio  (src/pages/TTTBuilder)  │
+│  chat · live preview · dashboard · memory    │
+└───────────────┬──────────────────────────────┘
+                │ prompt
+        ┌───────▼───────┐
+        │  Orchestrator │  planner → subagents → repair → review
+        └───────┬───────┘
+                │ file ops
+        ┌───────▼───────┐  ┌──────────────┐
+        │  Project FS   │← │  Wallet Kit   │  injects Kaspa protocol into every app
+        └───────┬───────┘  └──────────────┘
+                │ render
+        ┌───────▼───────┐
+        │  Live Preview │  in-browser / E2B sandbox
+        └───────────────┘
 ```
 
-Pin it as a desktop app with any SSB wrapper (e.g. `nativefier http://localhost:3000` or PWA install from your browser).
+### What's in this repo
 
-## What's in this repo
+| Path | What it is |
+|---|---|
+| `src/pages/TTTBuilder.jsx` | The studio — chat, live preview, and dashboard in one |
+| `src/components/tttbuilder/` | The engine: orchestrator, local LLM layer, model selector, wallet kit, project FS, file/image/GitHub sync, all builder UI |
+| `src/components/ui/` | shadcn/ui primitives the studio is built on |
+| `src/api/base44Client.js` | Standalone SDK stub — no Base44 platform required |
+| `public/TTT_BUILDER_WALLET.md` | The Kaspa wallet UI protocol contract (the enforced pattern) |
+| `public/TTT_BUILDER_ARTHUUN.md` · `public/ARHTUUN.md` | Architecture & protocol deep-dives |
 
-- `src/pages/TTTBuilder.jsx` — the builder studio (chat + live preview + dashboard)
-- `src/components/tttbuilder/` — orchestrator, local LLM layer, model selector, wallet kit, project files, and all builder UI
-- `src/components/ui/` — shadcn/ui primitives used by the builder
-- `src/api/base44Client.js` — standalone stub (no Base44 platform needed)
-- `public/TTT_BUILDER_WALLET.md`, `public/TTT_BUILDER_ARTHUUN.md`, `public/ARHTUUN.md` — architecture & protocol docs
+## 🔌 Optional features (graceful degradation)
 
-## Optional platform features (graceful degradation)
+A few features in the hosted TTT relied on the Base44 platform. In this self-hosted build they degrade gracefully — the build loop always works:
 
-A few features in the hosted TTT relied on the Base44 platform. In this self-hosted build they degrade gracefully — the build loop still works:
+- **Live preview sandbox** — static apps preview in-browser; for full npm-project sandboxing, wire `E2BLivePanel` to your own E2B API key.
+- **Image generation** — `TTT_IMAGE[...]` markers are cleared unless you plug an image endpoint into `src/components/tttbuilder/imageGen.js`.
+- **GitHub push** — use a personal access token, or push generated files manually.
+- **URL clone & file analysis** — optional attachment features (`uiClonerScrape`, `analyzeUploadedFile`).
+- **Auth** — `base44Client.js` returns a local admin user so the builder opens with no login. Edit it to add real auth if you want.
 
-- **Live preview sandbox** (`E2BLivePanel`): real npm-project sandboxing needs an E2B API key. Without it, static HTML/CSS/JS apps still preview live in-browser; React/npm projects show their code but won't auto-run a cloud sandbox. To enable: wire `E2BLivePanel` to your own E2B call.
-- **Image generation** (`imageGen.js`): `TTT_IMAGE[...]` markers are cleared if no image API is configured. To enable: plug your own image endpoint into `src/components/tttbuilder/imageGen.js`.
-- **GitHub push** (`publishToGitHub` / `pushAppToUserGitHubOAuth`): use a personal access token, or push generated files manually.
-- **URL clone & file analysis** (`uiClonerScrape`, `analyzeUploadedFile`): optional attachment features.
-- **Auth / admin gate**: `src/api/base44Client.js` returns a local admin user so the builder opens with no login. Edit it to add real auth if you want.
+## 🌍 Deploy anywhere
 
-## Build your own vibe-coding platform
+This is a standard Vite + React app — one build, any host:
 
-This repo IS a vibe-coding platform. Clone it, brand it, ship it:
+```bash
+npm run build   # → dist/
+```
 
-1. Fork/clone this repo.
+- **Vercel** — `vercel` (auto-detects Vite)
+- **Netlify** — publish `dist/`
+- **Cloudflare Pages** — output `dist`
+- **Docker** — serve `dist/` with nginx/caddy
+- **Desktop** — pin with `nativefier` or install as a PWA
+
+## 🧩 Build your own vibe-coding platform
+
+This repo **is** a vibe-coding platform. Clone it, brand it, ship it:
+
+1. **Fork** this repo.
 2. `npm install && npm run dev` — confirm it builds.
 3. Edit `src/pages/TTTBuilder.jsx` (the studio) and `src/components/tttbuilder/` (the engine) to match your brand and defaults.
-4. Point users at the Open Models tab to bring their own keys (open-source models only — never your hosted credits).
-5. Deploy (see "Run on any platform").
+4. Point your users at the Open Models tab — they bring their own keys, you never pay for their inference.
+5. Deploy (see above).
 
-## License
+> **The Kaspa wallet protocol is the differentiator.** Every app your platform generates ships with a real, local-only Kaspa wallet. That's not a feature — it's the foundation.
 
-MIT — see LICENSE.
+## 🛡️ Security model
+
+- **Keys never leave the browser.** Model keys, wallet seeds, and WIFs live in localStorage and go directly to the provider / signer. No server ever sees them.
+- **Wallet is local-only.** BIP39 seed → WIF → signed transactions, all in-browser. Explicit export controls. No custody, no relay, no extension dependency.
+- **No telemetry.** No analytics, no tracking, no phone-home. What you build stays on your machine.
+
+## 📄 License
+
+**MIT** — see [LICENSE](./LICENSE). Fork it, brand it, ship it, sell it. Just keep the copyright notice.
+
+---
+
+<div align="center">
+
+**Built for the Kaspa ecosystem.**
+
+⭐ Star this repo if it helped you ship.
+
+</div>
