@@ -57,11 +57,11 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
               Generates the canonical open-source TTT Builder repo — the platform code itself, copied from your app's GitHub repo. Anyone can clone it locally and bring their own keys. This is for the TTT Builder platform, not for individual apps you build.
             </p>
             <div>
-              <label className="text-xs text-white/50 mb-1.5 block">Your app's GitHub repo <span className="text-white/30">(owner/repo — where the TTT Builder files live)</span></label>
+              <label className="text-xs text-white/50 mb-1.5 block">Your app's GitHub repo <span className="text-white/30">(owner/repo — leave blank to auto-detect)</span></label>
               <input
                 value={sourceRepo}
                 onChange={(e) => setSourceRepo(e.target.value)}
-                placeholder="your-org/your-app-repo"
+                placeholder="auto-detect from your repos"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
               />
             </div>
@@ -79,7 +79,7 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
               <button onClick={onClose} className="flex-1 h-10 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors">Cancel</button>
               <button
                 onClick={submit}
-                disabled={loading || !sourceRepo.trim()}
+                disabled={loading}
                 className="flex-1 h-10 rounded-xl bg-[#70C7BA] text-black text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><Github className="w-4 h-4" /> Generate repo</>}
