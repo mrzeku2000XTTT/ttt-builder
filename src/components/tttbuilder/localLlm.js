@@ -9,15 +9,48 @@ const STORAGE_KEY = "ttt_builder_local_llm";
 export const LOCAL_MODEL_PREFIX = "local:";
 
 // Presets a cloner can pick from, or they can add a custom OpenAI-compatible endpoint.
+// Each preset includes keyUrl (where to get an API key) and region info.
+// Researched 2026-08 — covers all major Western + Chinese LLM providers.
 export const PROVIDER_PRESETS = [
-  { provider: "groq", label: "Groq (fast + free)", baseUrl: "https://api.groq.com/openai/v1", note: "Very fast, free tier, browser CORS-friendly. Get a key at console.groq.com/keys.", placeholderModel: "llama-3.3-70b-versatile" },
-  { provider: "google", label: "Google Gemini (AI Studio)", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", note: "Free tier, browser CORS-friendly. Get a key at aistudio.google.com/apikey.", placeholderModel: "gemini-2.0-flash" },
-  { provider: "openrouter", label: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", note: "Free + paid models. Get a key at openrouter.ai/keys. Browser-friendly CORS.", placeholderModel: "deepseek/deepseek-chat-v3.1:free" },
-  { provider: "together", label: "Together AI", baseUrl: "https://api.together.xyz/v1", note: "Free credits, browser CORS-friendly. Get a key at api.together.xyz/settings/api-keys.", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free" },
-  { provider: "mistral", label: "Mistral", baseUrl: "https://api.mistral.ai/v1", note: "Browser CORS-friendly. Get a key at console.mistral.ai/api-keys.", placeholderModel: "mistral-small-latest" },
-  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", note: "Get a key at platform.deepseek.com. (May need a CORS proxy when called from the browser.)", placeholderModel: "deepseek-chat" },
-  { provider: "ollama", label: "Ollama (local)", baseUrl: "http://localhost:11434/v1", note: "Run models locally with Ollama (ollama.com). No key needed. Runs `ollama serve`.", placeholderModel: "llama3.1" },
-  { provider: "custom", label: "Custom (OpenAI-compatible)", baseUrl: "", note: "Any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp server, etc.)", placeholderModel: "my-model" },
+  // ─── Western providers (CORS-friendly for browser use) ───
+  { provider: "groq", label: "Groq", baseUrl: "https://api.groq.com/openai/v1", keyUrl: "https://console.groq.com/keys", note: "Very fast, free tier, browser CORS-friendly.", placeholderModel: "llama-3.3-70b-versatile", region: "US", cors: true },
+  { provider: "google", label: "Google Gemini (AI Studio)", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", keyUrl: "https://aistudio.google.com/apikey", note: "Free tier, browser CORS-friendly.", placeholderModel: "gemini-2.0-flash", region: "Global", cors: true },
+  { provider: "openrouter", label: "OpenRouter (300+ models)", baseUrl: "https://openrouter.ai/api/v1", keyUrl: "https://openrouter.ai/keys", note: "Free + paid models from 60+ providers. Browser-friendly CORS. Use any model from any provider.", placeholderModel: "deepseek/deepseek-chat-v3.1:free", region: "Global", cors: true },
+  { provider: "together", label: "Together AI", baseUrl: "https://api.together.xyz/v1", keyUrl: "https://api.together.xyz/settings/api-keys", note: "Free credits, browser CORS-friendly. 200+ open-source models.", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", region: "US", cors: true },
+  { provider: "mistral", label: "Mistral AI", baseUrl: "https://api.mistral.ai/v1", keyUrl: "https://console.mistral.ai/api-keys", note: "Browser CORS-friendly. European provider.", placeholderModel: "mistral-small-latest", region: "EU", cors: true },
+
+  // ─── Western providers (may need CORS proxy for browser use) ───
+  { provider: "openai", label: "OpenAI", baseUrl: "https://api.openai.com/v1", keyUrl: "https://platform.openai.com/api-keys", note: "Official OpenAI. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "gpt-4o", region: "US", cors: false },
+  { provider: "anthropic", label: "Anthropic (Claude)", baseUrl: "https://api.anthropic.com/v1", keyUrl: "https://console.anthropic.com", note: "Official Anthropic. Needs a CORS proxy for browser use. Use OpenRouter for browser-friendly access.", placeholderModel: "claude-sonnet-4-20250514", region: "US", cors: false },
+  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", keyUrl: "https://platform.deepseek.com", note: "Cheap, high quality. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "deepseek-chat", region: "China/Global", cors: false },
+  { provider: "xai", label: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", keyUrl: "https://console.x.ai", note: "Grok models. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "grok-3", region: "US", cors: false },
+  { provider: "perplexity", label: "Perplexity", baseUrl: "https://api.perplexity.ai", keyUrl: "https://docs.perplexity.ai", note: "Online models. May need a CORS proxy for browser use.", placeholderModel: "sonar", region: "US", cors: false },
+  { provider: "fireworks", label: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1", keyUrl: "https://fireworks.ai/api-keys", note: "200+ open-source models. May need a CORS proxy for browser use.", placeholderModel: "accounts/fireworks/models/llama-v3p3-70b-instruct", region: "US", cors: false },
+  { provider: "cerebras", label: "Cerebras", baseUrl: "https://api.cerebras.ai/v1", keyUrl: "https://cloud.cerebras.ai", note: "Ultra-fast inference. May need a CORS proxy for browser use.", placeholderModel: "llama-3.3-70b", region: "US", cors: false },
+  { provider: "hyperbolic", label: "Hyperbolic", baseUrl: "https://api.hyperbolic.xyz/v1", keyUrl: "https://hyperbolic.xyz", note: "Open-source GPU inference. May need a CORS proxy for browser use.", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct", region: "US", cors: false },
+
+  // ─── Chinese providers (international endpoints) ───
+  { provider: "qwen_intl", label: "Qwen / Alibaba (International)", baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "qwen-plus", region: "Global", cors: false },
+  { provider: "moonshot_intl", label: "Moonshot / Kimi (International)", baseUrl: "https://api.moonshot.ai/v1", keyUrl: "https://platform.moonshot.ai", note: "Kimi K2/K3 models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "kimi-k2", region: "Global", cors: false },
+  { provider: "zhipu_intl", label: "Zhipu / GLM (International)", baseUrl: "https://api.z.ai/api/paas/v4", keyUrl: "https://z.ai/model-api", note: "GLM-4/5 models. International endpoint via z.ai. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "glm-4.6", region: "Global", cors: false },
+  { provider: "minimax_intl", label: "MiniMax (International)", baseUrl: "https://api.minimax.io/v1", keyUrl: "https://platform.minimax.io", note: "MiniMax M3 models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "MiniMax-M3", region: "Global", cors: false },
+
+  // ─── Chinese providers (China endpoints) ───
+  { provider: "qwen_cn", label: "Qwen / Alibaba (China)", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. China endpoint. OpenAI-compatible.", placeholderModel: "qwen-plus", region: "China", cors: false },
+  { provider: "moonshot_cn", label: "Moonshot / Kimi (China)", baseUrl: "https://api.moonshot.cn/v1", keyUrl: "https://platform.moonshot.cn", note: "Kimi models. China endpoint. OpenAI-compatible.", placeholderModel: "kimi-k2", region: "China", cors: false },
+  { provider: "zhipu_cn", label: "Zhipu / GLM (China)", baseUrl: "https://open.bigmodel.cn/api/paas/v4", keyUrl: "https://open.bigmodel.cn", note: "GLM models. China endpoint via bigmodel.cn. OpenAI-compatible.", placeholderModel: "glm-4.6", region: "China", cors: false },
+  { provider: "minimax_cn", label: "MiniMax (China)", baseUrl: "https://api.minimaxi.com/v1", keyUrl: "https://platform.minimaxi.com", note: "MiniMax models. China endpoint. OpenAI-compatible.", placeholderModel: "MiniMax-M3", region: "China", cors: false },
+  { provider: "baichuan", label: "Baichuan AI", baseUrl: "https://api.baichuan-ai.com/v1", keyUrl: "https://platform.baichuan-ai.com", note: "Baichuan models. China endpoint.", placeholderModel: "Baichuan4-Turbo", region: "China", cors: false },
+  { provider: "yi", label: "Yi / 01.AI", baseUrl: "https://api.lingyiwanwu.com/v1", keyUrl: "https://platform.lingyiwanwu.com", note: "Yi series models. China endpoint.", placeholderModel: "yi-large", region: "China", cors: false },
+  { provider: "stepfun", label: "StepFun", baseUrl: "https://api.stepfun.com/v1", keyUrl: "https://platform.stepfun.com", note: "Step models. China endpoint.", placeholderModel: "step-2-16k", region: "China", cors: false },
+  { provider: "doubao", label: "ByteDance / Doubao", baseUrl: "https://ark.cn-beijing.volces.com/api/v3", keyUrl: "https://console.volcengine.com/ark", note: "Doubao models via Volcano Engine Ark. China endpoint.", placeholderModel: "doubao-pro-32k", region: "China", cors: false },
+  { provider: "hunyuan", label: "Tencent Hunyuan", baseUrl: "https://api.hunyuan.cloud.tencent.com/v1", keyUrl: "https://cloud.tencent.com/product/hunyuan", note: "Tencent Hunyuan models. China endpoint.", placeholderModel: "hunyuan-pro", region: "China", cors: false },
+  { provider: "ernie", label: "Baidu ERNIE", baseUrl: "https://qianfan.baidubce.com/v2", keyUrl: "https://qianfan.cloud.baidu.com", note: "Baidu ERNIE models via Qianfan. China endpoint.", placeholderModel: "ernie-4.0-8k", region: "China", cors: false },
+  { provider: "spark", label: "iFlyTek Spark", baseUrl: "https://spark-api-open.xf-yun.com/v1", keyUrl: "https://xinghuo.xfyun.cn", note: "iFlyTek Spark models. China endpoint.", placeholderModel: "generalv3.5", region: "China", cors: false },
+
+  // ─── Local / Self-hosted ───
+  { provider: "ollama", label: "Ollama (local)", baseUrl: "http://localhost:11434/v1", keyUrl: "https://ollama.com", note: "Run models locally with Ollama. No key needed. Run `ollama serve`.", placeholderModel: "llama3.1", region: "Local", cors: true },
+  { provider: "custom", label: "Custom (OpenAI-compatible)", baseUrl: "", keyUrl: "", note: "Any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp server, etc.)", placeholderModel: "my-model", region: "Custom", cors: true },
 ];
 
 export function getLocalProviders() {

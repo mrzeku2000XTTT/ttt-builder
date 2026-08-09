@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight, ExternalLink, Globe } from "lucide-react";
 import { getLocalProviders, saveLocalProvider, removeLocalProvider, PROVIDER_PRESETS } from "./localLlm";
 
 /**
@@ -26,9 +26,21 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
     const s = modelStr.toLowerCase();
     if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
     if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral") || s.includes("groq")) return "groq";
-    if (s.includes("/")) return "openrouter";
     if (s.startsWith("deepseek")) return "deepseek";
     if (s.startsWith("mistral") || s.startsWith("codestral") || s.startsWith("pixtral")) return "mistral";
+    if (s.startsWith("qwen") || s.includes("qwen")) return "qwen_intl";
+    if (s.startsWith("kimi") || s.includes("moonshot")) return "moonshot_intl";
+    if (s.startsWith("glm") || s.includes("zhipu") || s.includes("chatglm")) return "zhipu_intl";
+    if (s.startsWith("minimax") || s.includes("minimax")) return "minimax_intl";
+    if (s.startsWith("baichuan")) return "baichuan";
+    if (s.startsWith("yi-") || s.startsWith("yi_")) return "yi";
+    if (s.startsWith("step")) return "stepfun";
+    if (s.startsWith("doubao")) return "doubao";
+    if (s.startsWith("hunyuan")) return "hunyuan";
+    if (s.startsWith("ernie")) return "ernie";
+    if (s.startsWith("spark") || s.startsWith("generalv")) return "spark";
+    if (s.startsWith("grok")) return "xai";
+    if (s.includes("/")) return "openrouter";
     return provider; // keep current (custom/ollama) otherwise
   };
 
@@ -139,9 +151,31 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
                   onChange={(e) => onPresetChange(e.target.value)}
                   className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none"
                 >
-                  {PROVIDER_PRESETS.map((p) => (
-                    <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                  ))}
+                  <optgroup label="CORS-friendly (browser)" className="bg-[#161b22]">
+                    {PROVIDER_PRESETS.filter((p) => p.cors && p.region !== "Local").map((p) => (
+                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Western (may need proxy)" className="bg-[#161b22]">
+                    {PROVIDER_PRESETS.filter((p) => !p.cors && p.region !== "China" && p.region !== "Local" && p.region !== "Custom").map((p) => (
+                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Chinese (international)" className="bg-[#161b22]">
+                    {PROVIDER_PRESETS.filter((p) => p.region === "Global" && (p.provider.includes("qwen") || p.provider.includes("moonshot") || p.provider.includes("zhipu") || p.provider.includes("minimax"))).map((p) => (
+                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Chinese (China endpoints)" className="bg-[#161b22]">
+                    {PROVIDER_PRESETS.filter((p) => p.region === "China").map((p) => (
+                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Local / Self-hosted" className="bg-[#161b22]">
+                    {PROVIDER_PRESETS.filter((p) => p.region === "Local" || p.region === "Custom").map((p) => (
+                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
+                    ))}
+                  </optgroup>
                 </select>
                 <input
                   value={baseUrl}
@@ -151,6 +185,28 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
                 />
               </div>
               <p className="text-[10px] text-white/40 leading-relaxed">{preset.note}</p>
+              {/* Key link */}
+              {preset.keyUrl && (
+                <a
+                  href={preset.keyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-[#70C7BA] hover:underline flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3 h-3" /> Get API key from {preset.label}
+                </a>
+              )}
+              {/* OpenRouter alternative */}
+              {preset.provider !== "openrouter" && preset.provider !== "ollama" && preset.provider !== "custom" && (
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-[#70C7BA] hover:underline flex items-center gap-1"
+                >
+                  <Globe className="w-3 h-3" /> Or use this model via OpenRouter (CORS-friendly)
+                </a>
+              )}
             </div>
           )}
 
