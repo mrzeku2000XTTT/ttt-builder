@@ -1,6 +1,100 @@
-import React, { useState } from "react";
-import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight, ExternalLink, Globe } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight, ExternalLink, Globe, Search, Check } from "lucide-react";
 import { getLocalProviders, saveLocalProvider, removeLocalProvider, PROVIDER_PRESETS } from "./localLlm";
+
+/**
+ * ProviderPicker — custom searchable dropdown for 30+ LLM providers.
+ * Replaces the native <select> which is too long for mobile.
+ */
+function ProviderPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selected = PROVIDER_PRESETS.find((p) => p.provider === value) || PROVIDER_PRESETS[0];
+
+  const groups = [
+    { label: "CORS-friendly (browser)", filter: (p) => p.cors && p.region !== "Local" && p.region !== "Custom" },
+    { label: "Western (may need proxy)", filter: (p) => !p.cors && p.region !== "China" && p.region !== "Local" && p.region !== "Custom" },
+    { label: "Chinese (international)", filter: (p) => p.region === "Global" && (p.provider.includes("qwen") || p.provider.includes("moonshot") || p.provider.includes("zhipu") || p.provider.includes("minimax")) },
+    { label: "Chinese (China endpoints)", filter: (p) => p.region === "China" },
+    { label: "Local / Self-hosted", filter: (p) => p.region === "Local" || p.region === "Custom" },
+  ];
+
+  const q = query.toLowerCase().trim();
+  const filteredGroups = groups
+    .map((g) => ({
+      ...g,
+      items: PROVIDER_PRESETS.filter((p) => g.filter(p) && (!q || p.label.toLowerCase().includes(q) || p.provider.includes(q))),
+    }))
+    .filter((g) => g.items.length > 0);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-[#70C7BA]/40"
+      >
+        <span className="truncate font-medium">{selected.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-white/40 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/15 rounded-lg shadow-2xl overflow-hidden">
+          {/* Search */}
+          <div className="relative border-b border-white/10">
+            <Search className="w-3 h-3 text-white/30 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search providers…"
+              className="w-full bg-transparent pl-7 pr-3 py-2 text-[11px] text-white placeholder:text-white/30 outline-none"
+            />
+          </div>
+          {/* List */}
+          <div className="max-h-[200px] overflow-y-auto overscroll-contain">
+            {filteredGroups.map((g) => (
+              <div key={g.label}>
+                <div className="px-2.5 py-1 text-[9px] font-bold text-white/30 uppercase tracking-wider sticky top-0 bg-[#1a1a1a]">
+                  {g.label}
+                </div>
+                {g.items.map((p) => (
+                  <button
+                    key={p.provider}
+                    type="button"
+                    onClick={() => { onChange(p.provider); setOpen(false); setQuery(""); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 text-left text-[11px] transition-colors ${
+                      p.provider === value
+                        ? "bg-[#007bff] text-white"
+                        : "text-white/70 hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="flex-1 truncate">{p.label}</span>
+                    {p.provider === value && <Check className="w-3 h-3 flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            ))}
+            {filteredGroups.length === 0 && (
+              <div className="px-3 py-4 text-[10px] text-white/30 text-center">No providers found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * OpenModelsTab — manage bring-your-own-key LLM providers.
@@ -21,7 +115,6 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
 
   const refresh = () => setList(getLocalProviders());
 
-  // Auto-detect provider from the model string.
   const autoDetectProvider = (modelStr) => {
     const s = modelStr.toLowerCase();
     if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
@@ -41,7 +134,7 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
     if (s.startsWith("spark") || s.startsWith("generalv")) return "spark";
     if (s.startsWith("grok")) return "xai";
     if (s.includes("/")) return "openrouter";
-    return provider; // keep current (custom/ollama) otherwise
+    return provider;
   };
 
   const onModelChange = (val) => {
@@ -81,22 +174,22 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm sm:px-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-[#161b22] border border-white/10 rounded-2xl p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <KeyRound className="w-5 h-5 text-[#70C7BA]" />
-          <h2 className="font-bold text-white text-base">Open Models - Bring Your Own</h2>
-          <button onClick={onClose} className="ml-auto text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
+      <div className="bg-[#161b22] border border-white/10 rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] overflow-y-auto overscroll-contain">
+        <div className="flex items-center gap-2 mb-3">
+          <KeyRound className="w-5 h-5 text-[#70C7BA] flex-shrink-0" />
+          <h2 className="font-bold text-white text-sm sm:text-base">Open Models - Bring Your Own</h2>
+          <button onClick={onClose} className="ml-auto text-white/40 hover:text-white flex-shrink-0"><X className="w-4 h-4" /></button>
         </div>
 
-        <div className="text-[11px] text-white/60 mb-4 px-2.5 py-2 rounded-lg bg-[#70C7BA]/10 border border-[#70C7BA]/20 leading-relaxed">
+        <div className="text-[10px] sm:text-[11px] text-white/60 mb-3 px-2.5 py-2 rounded-lg bg-[#70C7BA]/10 border border-[#70C7BA]/20 leading-relaxed">
           Keys are stored <b>only in this browser</b> (localStorage) and sent directly to the provider. They never touch Base44 or any other server. Paste any model name — the provider is auto-detected.
         </div>
 
         {list.length > 0 && (
-          <div className="space-y-1.5 mb-4">
+          <div className="space-y-1.5 mb-3">
             {list.map((p) => (
               <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#70C7BA] flex-shrink-0" />
@@ -112,7 +205,7 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
           </div>
         )}
 
-        <div className="space-y-2 border-t border-white/10 pt-4">
+        <div className="space-y-2 border-t border-white/10 pt-3">
           <div className="text-xs font-bold text-white/70">Add a model</div>
           <input
             value={model}
@@ -145,45 +238,14 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
 
           {showAdvanced && (
             <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={provider}
-                  onChange={(e) => onPresetChange(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none"
-                >
-                  <optgroup label="CORS-friendly (browser)" className="bg-[#161b22]">
-                    {PROVIDER_PRESETS.filter((p) => p.cors && p.region !== "Local").map((p) => (
-                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Western (may need proxy)" className="bg-[#161b22]">
-                    {PROVIDER_PRESETS.filter((p) => !p.cors && p.region !== "China" && p.region !== "Local" && p.region !== "Custom").map((p) => (
-                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Chinese (international)" className="bg-[#161b22]">
-                    {PROVIDER_PRESETS.filter((p) => p.region === "Global" && (p.provider.includes("qwen") || p.provider.includes("moonshot") || p.provider.includes("zhipu") || p.provider.includes("minimax"))).map((p) => (
-                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Chinese (China endpoints)" className="bg-[#161b22]">
-                    {PROVIDER_PRESETS.filter((p) => p.region === "China").map((p) => (
-                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Local / Self-hosted" className="bg-[#161b22]">
-                    {PROVIDER_PRESETS.filter((p) => p.region === "Local" || p.region === "Custom").map((p) => (
-                      <option key={p.provider} value={p.provider} className="bg-[#161b22]">{p.label}</option>
-                    ))}
-                  </optgroup>
-                </select>
-                <input
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="Base URL"
-                  className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white placeholder:text-white/30 outline-none"
-                />
-              </div>
+              {/* Custom searchable provider picker — fits mobile */}
+              <ProviderPicker value={provider} onChange={onPresetChange} />
+              <input
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="Base URL"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2.5 text-xs text-white placeholder:text-white/30 outline-none font-mono"
+              />
               <p className="text-[10px] text-white/40 leading-relaxed">{preset.note}</p>
               {/* Key link */}
               {preset.keyUrl && (
@@ -213,7 +275,7 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
           {err && <p className="text-[10px] text-red-400">{err}</p>}
           <button
             onClick={add}
-            className="w-full h-9 rounded-lg bg-[#70C7BA] text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#70C7BA]/90 transition-colors"
+            className="w-full h-10 rounded-lg bg-[#70C7BA] text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#70C7BA]/90 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add model
           </button>
