@@ -22,7 +22,7 @@ export const PROVIDER_PRESETS = [
   // ─── Western providers (may need CORS proxy for browser use) ───
   { provider: "openai", label: "OpenAI", baseUrl: "https://api.openai.com/v1", keyUrl: "https://platform.openai.com/api-keys", note: "Official OpenAI. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "gpt-4o", region: "US", cors: false },
   { provider: "anthropic", label: "Anthropic (Claude)", baseUrl: "https://api.anthropic.com/v1", keyUrl: "https://console.anthropic.com", note: "Official Anthropic. Needs a CORS proxy for browser use. Use OpenRouter for browser-friendly access.", placeholderModel: "claude-sonnet-4-20250514", region: "US", cors: false },
-  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", keyUrl: "https://platform.deepseek.com", note: "Cheap, high quality. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "deepseek-chat", region: "China/Global", cors: false },
+  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com", keyUrl: "https://platform.deepseek.com/api_keys", note: "V4 models. OpenAI-compatible. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "deepseek-v4-flash", region: "China/Global", cors: false },
   { provider: "xai", label: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", keyUrl: "https://console.x.ai", note: "Grok models. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "grok-3", region: "US", cors: false },
   { provider: "perplexity", label: "Perplexity", baseUrl: "https://api.perplexity.ai", keyUrl: "https://docs.perplexity.ai", note: "Online models. May need a CORS proxy for browser use.", placeholderModel: "sonar", region: "US", cors: false },
   { provider: "fireworks", label: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1", keyUrl: "https://fireworks.ai/api-keys", note: "200+ open-source models. May need a CORS proxy for browser use.", placeholderModel: "accounts/fireworks/models/llama-v3p3-70b-instruct", region: "US", cors: false },
@@ -68,6 +68,7 @@ export function getLocalProviders() {
 //
 // Supported .env keys:
 //   VITE_GEMINI_API_KEY            → auto-creates a Google Gemini 2.0 Flash entry
+//   VITE_DEEPSEEK_API_KEY          → auto-creates a DeepSeek V4 Flash entry
 //   VITE_LLM_API_KEY               → creates a generic entry (pair with below)
 //   VITE_LLM_MODEL, VITE_LLM_BASE_URL, VITE_LLM_PROVIDER, VITE_LLM_LABEL
 //
@@ -85,6 +86,18 @@ export function getEnvProviders() {
       model: "gemini-2.0-flash",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
       apiKey: gKey,
+      _env: true,
+    });
+  }
+  const dsKey = (env.VITE_DEEPSEEK_API_KEY || "").trim();
+  if (dsKey) {
+    out.push({
+      id: "env_deepseek",
+      provider: "deepseek",
+      label: "DeepSeek V4 (.env)",
+      model: "deepseek-v4-flash",
+      baseUrl: "https://api.deepseek.com",
+      apiKey: dsKey,
       _env: true,
     });
   }
@@ -258,6 +271,8 @@ export const HOSTED_MODEL_REGISTRY = {
   "gpt_5_mini":        { label: "GPT-5 Mini",        provider: "openai",    baseUrl: "https://api.openai.com/v1",                              model: "gpt-5-mini" },
   "gemini_3_1_pro":    { label: "Gemini 3.1 Pro",   provider: "google",    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.1-pro" },
   "gemini_3_flash":    { label: "Gemini 3 Flash",   provider: "google",    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3-flash" },
+  "deepseek_v4_pro":   { label: "DeepSeek V4 Pro",  provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-pro" },
+  "deepseek_v4_flash": { label: "DeepSeek V4 Flash", provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-flash" },
 };
 
 // ─── Provider base URL options ─────────────────────────────────────────
@@ -278,6 +293,10 @@ export const PROVIDER_BASE_URLS = {
   google: [
     { label: "Google AI Studio", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", modelPrefix: "",       note: "CORS-friendly. Free tier. Get a key at aistudio.google.com/apikey." },
     { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                              modelPrefix: "google/",  note: "CORS-friendly proxy. Get a key at openrouter.ai/keys." },
+  ],
+  deepseek: [
+    { label: "DeepSeek Direct",  baseUrl: "https://api.deepseek.com",                                  modelPrefix: "",          note: "Official DeepSeek endpoint. May need a CORS proxy for browser use. Get a key at platform.deepseek.com/api_keys." },
+    { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                             modelPrefix: "deepseek/", note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
   ],
 };
 
