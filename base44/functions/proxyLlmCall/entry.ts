@@ -6,7 +6,7 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' });
 
-    const { baseUrl, model, messages, apiKey, temperature, maxTokens } = await req.json();
+    const { baseUrl, model, messages, apiKey, temperature, maxTokens, jsonMode } = await req.json();
     if (!baseUrl || !model || !apiKey) return Response.json({ error: 'Missing baseUrl, model, or apiKey' });
 
     const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
@@ -14,6 +14,8 @@ export default async function (req) {
     if (baseUrl.includes('openrouter.ai')) { headers['HTTP-Referer'] = 'https://ttt.base44.app'; headers['X-Title'] = 'TTT Builder'; }
 
     const body = { model, messages, temperature: temperature ?? 0.3, max_tokens: maxTokens ?? 8192 };
+    if (jsonMode) { body.response_format = { type: 'json_object' }; }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 120000);
 
