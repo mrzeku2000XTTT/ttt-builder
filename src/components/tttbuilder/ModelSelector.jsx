@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Cpu } from "lucide-react";
-import { getLocalProviders, getAllProviders, LOCAL_MODEL_PREFIX } from "./localLlm";
+import { getLocalProviders, getAllProviders, LOCAL_MODEL_PREFIX, isModelHidden } from "./localLlm";
 import { isStandalone } from "./OnboardingModal";
 import OpenModelsTab from "./OpenModelsTab";
 import GeminiKeyModal from "./GeminiKeyModal";
@@ -66,7 +66,7 @@ export default function ModelSelector({ value, onChange, disabled, variant = "da
           {/* Hosted models only exist on the Base44 platform — hidden in standalone */}
           {!standalone && (
             <optgroup label="Hosted">
-              {BUILDER_MODELS.map((m) => (
+              {BUILDER_MODELS.filter((m) => !isModelHidden(m.id)).map((m) => (
                 <option key={m.id} value={m.id} className="bg-[#161b22] text-white">{m.label}</option>
               ))}
             </optgroup>

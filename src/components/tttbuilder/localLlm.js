@@ -217,6 +217,46 @@ export const HOSTED_MODEL_REGISTRY = {
   "gemini_3_flash":    { label: "Gemini 3 Flash",   provider: "google",    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3-flash" },
 };
 
+// ─── Provider base URL options ─────────────────────────────────────────
+// Each provider can be reached through multiple endpoints. The user picks
+// the one that works best for their setup (CORS-friendly proxy vs direct).
+// When switching endpoints, the model name is auto-prefixed to match the
+// endpoint's naming convention (e.g. "claude-opus-4.8" → "anthropic/claude-opus-4.8"
+// for OpenRouter).
+export const PROVIDER_BASE_URLS = {
+  anthropic: [
+    { label: "OpenRouter",     baseUrl: "https://openrouter.ai/api/v1",                          modelPrefix: "anthropic/", note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
+    { label: "Anthropic Direct", baseUrl: "https://api.anthropic.com/v1",                        modelPrefix: "",            note: "Official Anthropic endpoint. Needs a CORS proxy for browser use. Get a key at console.anthropic.com." },
+  ],
+  openai: [
+    { label: "OpenAI Direct",   baseUrl: "https://api.openai.com/v1",                            modelPrefix: "",            note: "Official OpenAI endpoint. May need a CORS proxy for browser use. Get a key at platform.openai.com." },
+    { label: "OpenRouter",      baseUrl: "https://openrouter.ai/api/v1",                         modelPrefix: "openai/",     note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
+  ],
+  google: [
+    { label: "Google AI Studio", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", modelPrefix: "",       note: "CORS-friendly. Free tier. Get a key at aistudio.google.com/apikey." },
+    { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                              modelPrefix: "google/",  note: "CORS-friendly proxy. Get a key at openrouter.ai/keys." },
+  ],
+};
+
+// ─── Hidden models (user preference) ───────────────────────────────────
+// Users can hide models they don't use so the input picker stays clean.
+// Hidden models are stored locally and filtered out of the ModelSelector.
+const HIDDEN_MODELS_STORAGE = "ttt_builder_hidden_models";
+
+export function getHiddenModels() {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_MODELS_STORAGE) || "[]"); } catch { return []; }
+}
+export function isModelHidden(id) {
+  return getHiddenModels().includes(id);
+}
+export function setHiddenModel(id, hide) {
+  const list = getHiddenModels();
+  const idx = list.indexOf(id);
+  if (hide && idx === -1) list.push(id);
+  if (!hide && idx >= 0) list.splice(idx, 1);
+  try { localStorage.setItem(HIDDEN_MODELS_STORAGE, JSON.stringify(list)); } catch {}
+}
+
 function _getHostedKeys() {
   try { return JSON.parse(localStorage.getItem(HOSTED_KEY_STORAGE) || "{}"); } catch { return {}; }
 }
