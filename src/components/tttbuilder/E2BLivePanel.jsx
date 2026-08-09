@@ -40,37 +40,103 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
           return;
         }
         const sbx = await Sandbox.create({ apiKey: e2bKey });
+        const APP = "/home/user/app";
         // Write all project files into the sandbox
         for (const f of files) {
-          try { await sbx.files.write(f.path, f.content); } catch {}
+          try { await sbx.files.write(`${APP}/${f.path}`, f.content); } catch {}
         }
-        // Install deps and start the dev server
         const pkg = files.find(f => f.path === "package.json");
-        const installCmd = pkg ? "npm install" : "echo no package.json";
-        await sbx.commands.run(installCmd, { timeoutMs: 120000 });
-        const startProc = await sbx.commands.run("npm run dev", { timeoutMs: 600000, background: true });
-        // Wait for the port to open, then get the preview URL
-        await new Promise(r => setTimeout(r, 5000));
-        const previewUrl = sbx.getHostname(3000);
-        const fullUrl = `https://${previewUrl}`;
+        const logs = [`● sandbox ${sbx.sandboxId} started`];
+
+        if (pkg) {
+          let pkgObj = {};
+          try { pkgObj = JSON.parse(pkg.content || "{}"); } catch {}
+          const deps = { ...(pkgObj.dependencies || {}), ...(pkgObj.devDependencies || {}) };
+          const scripts = pkgObj.scripts || {};
+
+          // Install deps
+          const install = await sbx.commands.run("npm install --no-audit --no-fund", { cwd: APP, timeoutMs: 120000 });
+          logs.push(`$ npm install → exit ${install.exitCode}`);
+          if (install.stderr) logs.push(install.stderr.slice(-1000));
+          if (install.exitCode !== 0) {
+            setState({ status: "error", url: null, sandboxId: sbx.sandboxId, logs, error: "npm install failed — check the logs." });
+            return;
+          }
+
+          // Vite projects: validate build, then inject a wrapper config so Vite
+          // accepts the E2B sandbox hostname (allowedHosts) and binds to 0.0.0.0:3000.
+          if (deps.vite) {
+            const build = await sbx.commands.run("npx vite build", { cwd: APP, timeoutMs: 90000 });
+            logs.push(`$ npx vite build → exit ${build.exitCode}`);
+            if (build.stdout) logs.push(build.stdout.slice(-2000));
+            if (build.stderr) logs.push(build.stderr.slice(-2000));
+            if (build.exitCode !== 0) {
+              setState({ status: "error", url: null, sandboxId: sbx.sandboxId, logs, error: "Vite build failed — the generated project has a compile error. Open logs and tap Fix build error." });
+              return;
+            }
+            const VITE_WRAPPER = `import { defineConfig, mergeConfig } from 'vite';
+export default defineConfig(async (env) => {
+  let user = {};
+  for (const p of ['./vite.config.js', './vite.config.mjs', './vite.config.ts']) {
+    try { const m = await import(p); user = m.default ?? {}; break; } catch (e) {}
+  }
+  if (typeof user === 'function') user = await user(env);
+  return mergeConfig(user, { server: { host: '0.0.0.0', port: 3000, strictPort: true, allowedHosts: true, hmr: { clientPort: 443 } } });
+});`;
+            await sbx.files.write(`${APP}/vite.e2b.config.mjs`, VITE_WRAPPER);
+            logs.push("● injected vite.e2b.config.mjs (allowedHosts)");
+            await sbx.commands.run("npx vite --config vite.e2b.config.mjs", { cwd: APP, background: true, timeoutMs: 600000 });
+            logs.push("$ npx vite --config vite.e2b.config.mjs (background, port 3000)");
+            var devPort = 3000;
+          } else {
+            const cmd = scripts.dev ? "npm run dev" : scripts.start ? "npm start" : "node index.js";
+            await sbx.commands.run(cmd, { cwd: APP, background: true, timeoutMs: 600000 });
+            logs.push(`$ ${cmd} (background)`);
+            var devPort = 3000;
+          }
+        } else {
+          // Plain HTML — static server
+          var devPort = 8080;
+          await sbx.commands.run(`python3 -m http.server ${devPort} --bind 0.0.0.0`, { cwd: APP, background: true, timeoutMs: 600000 });
+          logs.push(`$ python3 -m http.server ${devPort}`);
+        }
+
+        // Build the preview URL
+        const hostname = typeof sbx.getUrl === "function"
+          ? sbx.getUrl(devPort)
+          : `https://${devPort}-${sbx.sandboxId}.e2b.dev`;
+
+        // Poll until the server actually responds — otherwise the iframe loads a dead page
+        let ready = false;
+        for (let i = 0; i < 20; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            const probe = await fetch(hostname, { redirect: "follow", mode: "no-cors" });
+            ready = true; break;
+          } catch { /* not up yet */ }
+        }
+        logs.push(ready ? `● live at ${hostname}` : `⚠️ server not responding yet at ${hostname}`);
         setState({
           status: "live",
-          url: fullUrl,
+          url: hostname,
           sandboxId: sbx.sandboxId,
-          logs: [`Sandbox ${sbx.sandboxId} started`, `npm run dev launched`, `Preview: ${fullUrl}`],
+          logs,
           error: null,
         });
       } else {
         // Hosted: use the backend function with the server-side E2B key.
         const res = await base44.functions.invoke("e2bSandbox", { action: "run", files });
-        const d = res.data || {};
-        setState({
-          status: d.url ? "live" : "error",
-          url: d.url || null,
-          sandboxId: d.sandboxId || null,
-          logs: d.logs || [],
-          error: d.error || null,
-        });
+        const d = res?.data || res || {};
+        if (d.error) {
+          setState({ status: "error", url: null, sandboxId: d.sandboxId || null, logs: d.logs || [], error: d.error });
+        } else if (d.url && d.ready) {
+          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: d.logs || [], error: null });
+        } else if (d.url && d.ready === false) {
+          // Server started but didn't respond in time — show it anyway with a warning
+          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: [...(d.logs || []), "⚠️ server still warming up — reload in a few seconds if blank"], error: null });
+        } else {
+          setState({ status: "error", url: null, sandboxId: null, logs: d.logs || [], error: "No preview URL returned from the sandbox." });
+        }
       }
     } catch (err) {
       setState({ status: "error", url: null, sandboxId: null, logs: [], error: err.message });
@@ -177,7 +243,7 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
           </div>
         )}
         {state.status === "live" && state.url && (
-          <iframe key={frameKey} src={state.url} className="w-full h-full border-0" title="Live Sandbox" />
+          <iframe key={frameKey} src={state.url} className="w-full h-full border-0 bg-white" title="Live Sandbox" />
         )}
         {state.status === "error" && (
           <div className="absolute inset-0 overflow-auto p-4">

@@ -3,7 +3,7 @@
 // drop, timeout, abort) — genuine model/logic errors still throw immediately.
 
 import { base44 } from "@/api/base44Client";
-import { isLocalModelId, callLocalLlm } from "./localLlm";
+import { isLocalModelId, callLocalLlm, resolveHostedModel } from "./localLlm";
 
 const TRANSIENT = /network|failed to fetch|timeout|timed out|aborted|err_network|econnreset|socket hang up|load failed|networkerror|network request failed/;
 
@@ -20,6 +20,13 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   // error so they can fix their endpoint/key instead of silently re-billing quota.
   if (isLocalModelId(args.model)) {
     return callLocalLlm(args);
+  }
+  // Hosted model with a user-provided API key → call the provider directly
+  // (bypasses Base44 credits entirely). Falls back to Base44 InvokeLLM when
+  // no key is set, so TTT Agent 1 / automatic / keyless models still work.
+  const hostedProvider = resolveHostedModel(args.model);
+  if (hostedProvider) {
+    return callLocalLlm({ ...args, _resolvedProvider: hostedProvider });
   }
   let lastErr = null;
   for (let attempt = 0; attempt <= max; attempt++) {

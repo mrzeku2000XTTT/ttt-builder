@@ -51,7 +51,7 @@ Open **http://localhost:3000** — the studio loads in your browser. No login, n
 
 On first launch, a **step-by-step onboarding wizard** appears automatically (standalone build only). It walks you through:
 
-1. **Add your model** — paste any model string (e.g. `nvidia/nemotron-3-super-120b-a12b:free`) + your API key. Provider is auto-detected.
+1. **Add your model** — defaults to **Gemini 2.0 Flash** (free tier). Just paste your Google AI Studio key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Or change the model string to use any other provider (Groq, OpenRouter, etc.) — provider is auto-detected.
 2. **Add E2B key** *(optional)* — for live React/npm sandbox previews. Skip if you only build static HTML apps.
 3. **Ready** — start building. Every app ships with a Kaspa wallet built in.
 
@@ -63,7 +63,9 @@ Prefer to skip the wizard? Open the builder → model selector (top-right of the
 
 | Provider | Where to get a key | Example model | Notes |
 |---|---|---|---|
-| **OpenRouter** *(recommended)* | [openrouter.ai/keys](https://openrouter.ai/keys) | `deepseek/deepseek-chat-v3.1:free` | Free + paid models, browser-friendly CORS |
+| **Google Gemini** *(default)* | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | `gemini-2.0-flash` | Free tier, browser-friendly CORS, no credit card |
+| **Groq** | [console.groq.com/keys](https://console.groq.com/keys) | `llama-3.3-70b-versatile` | Fast + free, browser-friendly CORS |
+| **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `deepseek/deepseek-chat-v3.1:free` | Free + paid models, browser-friendly CORS |
 | **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com) | `deepseek-chat` | Best price/perf for code |
 | **Ollama** *(local, no key)* | run `ollama serve` | `llama3.1` | 100% local, zero cost, zero network |
 | **Custom** | — | — | Any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp) |

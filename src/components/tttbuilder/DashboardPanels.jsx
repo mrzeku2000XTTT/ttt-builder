@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { FileCode, Server, Bot, Database, Brain, Settings, Zap, Plus, Trash2, Save, Cpu, Wallet, Sparkles } from "lucide-react";
+import { FileCode, Server, Bot, Database, Brain, Settings, Zap, Plus, Trash2, Save, Cpu, Wallet, Sparkles, KeyRound, ShieldCheck, ExternalLink } from "lucide-react";
+import { getLocalProviders, getAllProviders, getEnvProviders, removeLocalProvider, LOCAL_MODEL_PREFIX, PROVIDER_PRESETS } from "./localLlm";
+import { isStandalone } from "./OnboardingModal";
+import OpenModelsTab from "./OpenModelsTab";
+import GeminiKeyModal from "./GeminiKeyModal";
+import ModelKeySettings from "./ModelKeySettings";
 
 /* ---------- Overview ---------- */
 export function OverviewPanel({ files, messages, buildMode, model, walletKit, onJump }) {
@@ -225,9 +230,18 @@ export function MemoryPanel() {
 
 /* ---------- Settings ---------- */
 export function SettingsPanel({ buildMode, onChangeBuildMode, model, onChangeModel, walletKit, onChangeWalletKit, loading }) {
+  const standalone = isStandalone();
   const [localLLM, setLocalLLM] = useState(() => {
     try { return localStorage.getItem("ttt_builder_local_llm") || ""; } catch { return ""; }
   });
+  const [mgrOpen, setMgrOpen] = useState(false);
+  const [geminiOpen, setGeminiOpen] = useState(false);
+  const [, forceTick] = useState(0);
+  const refresh = () => forceTick((t) => t + 1);
+  const local = getLocalProviders();
+  const env = getEnvProviders();
+  const all = getAllProviders();
+
   const saveLocalLLM = (v) => {
     setLocalLLM(v);
     try { localStorage.setItem("ttt_builder_local_llm", v); } catch {}
@@ -239,6 +253,96 @@ export function SettingsPanel({ buildMode, onChangeBuildMode, model, onChangeMod
         <h2 className="text-lg font-bold text-white mb-1">Settings</h2>
         <p className="text-xs text-white/40">Configure your build environment.</p>
       </div>
+
+      {/* Models & API keys — standalone only (hosted app manages models in the picker) */}
+      {standalone && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-[#70C7BA]" />
+            <div className="text-xs text-white/50 font-medium">Models &amp; API keys</div>
+          </div>
+          <p className="text-[11px] text-white/30 leading-relaxed">
+            Add the models you want to build with. Keys are stored <b>locally in your browser</b> (localStorage) and sent directly to the provider — never to any server. For a safer setup, use a <code className="text-[#70C7BA]/80">.env</code> file (see below).
+          </p>
+
+          {/* Configured providers */}
+          <div className="space-y-2">
+            {all.length === 0 && (
+              <div className="text-center py-4 text-white/30 text-xs border border-dashed border-white/10 rounded-lg">
+                No models yet. Add one below.
+              </div>
+            )}
+            {all.map((p) => {
+              const active = model === `${LOCAL_MODEL_PREFIX}${p.id}`;
+              return (
+                <div key={p.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <Cpu className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white/80 truncate font-medium">
+                      {p.label}{p._env && <span className="ml-1.5 text-[9px] font-bold text-[#70C7BA]">ENV</span>}
+                    </div>
+                    <div className="text-[10px] text-white/30 truncate">{p.provider} · {p.model || "—"}</div>
+                  </div>
+                  {active && <span className="text-[9px] font-bold text-[#70C7BA]">ACTIVE</span>}
+                  {!p._env && (
+                    <button
+                      onClick={() => { removeLocalProvider(p.id); if (active) onChangeModel(""); refresh(); }}
+                      className="text-white/30 hover:text-red-400 transition-colors p-1"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add buttons */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setGeminiOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#4285F4]/15 border border-[#4285F4]/30 text-[#4285F4] text-xs font-bold hover:bg-[#4285F4]/25 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Gemini (free)
+            </button>
+            <button
+              onClick={() => setMgrOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white text-xs font-bold transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add open model
+            </button>
+          </div>
+
+          {/* .env (safer) hint */}
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#70C7BA]/8 border border-[#70C7BA]/20">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#70C7BA] flex-shrink-0 mt-0.5" />
+            <div className="text-[10px] text-white/60 leading-relaxed">
+              <b className="text-white/80">Safer: use a .env file.</b> Create <code className="text-[#70C7BA]/80">.env</code> in the repo root (gitignored) and restart <code className="text-[#70C7BA]/80">npm run dev</code>:
+              <pre className="mt-1.5 p-2 rounded bg-black/30 text-[9px] font-mono text-white/70 overflow-x-auto">{`VITE_GEMINI_API_KEY=AIza...
+# or any OpenAI-compatible provider:
+VITE_LLM_API_KEY=sk-...
+VITE_LLM_MODEL=llama-3.3-70b-versatile
+VITE_LLM_BASE_URL=https://api.groq.com/openai/v1
+VITE_LLM_PROVIDER=groq`}</pre>
+              {env.length > 0
+                ? <span className="text-[#70C7BA]">✓ {env.length} model{env.length > 1 ? "s" : ""} loaded from .env (read-only).</span>
+                : <span className="text-white/40">No env keys detected yet. Get a free Gemini key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="text-[#70C7BA] underline inline-flex items-center gap-0.5">aistudio.google.com/apikey <ExternalLink className="w-2.5 h-2.5" /></a>.</span>}
+            </div>
+          </div>
+
+          <OpenModelsTab
+            open={mgrOpen}
+            onClose={() => { setMgrOpen(false); refresh(); }}
+            onAdded={(entry) => { onChangeModel(`${LOCAL_MODEL_PREFIX}${entry.id}`); setMgrOpen(false); refresh(); }}
+          />
+          <GeminiKeyModal
+            open={geminiOpen}
+            onClose={() => { setGeminiOpen(false); refresh(); }}
+            onSaved={(entry) => { onChangeModel(`${LOCAL_MODEL_PREFIX}${entry.id}`); setGeminiOpen(false); refresh(); }}
+          />
+        </div>
+      )}
 
       {/* Build mode */}
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
@@ -259,28 +363,16 @@ export function SettingsPanel({ buildMode, onChangeBuildMode, model, onChangeMod
         </div>
       </div>
 
-      {/* Model */}
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
-        <div className="text-xs text-white/50 font-medium mb-3">AI model</div>
-        <div className="flex gap-2">
-          {[
-            { id: "ttt_agent_1", label: "TTT Agent 1" },
-            { id: "claude_opus_4_8", label: "Claude Opus" },
-            { id: "claude_sonnet_4_6", label: "Claude Sonnet" },
-          ].map(m => (
-            <button
-              key={m.id}
-              onClick={() => onChangeModel(m.id)}
-              disabled={loading}
-              className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                model === m.id ? "bg-[#70C7BA] text-black" : "bg-white/5 text-white/60 hover:text-white"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+      {/* Model — full model list with per-model API key inputs (hosted app only) */}
+      {!standalone && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Cpu className="w-4 h-4 text-[#70C7BA]" />
+            <div className="text-xs text-white/50 font-medium">AI model &amp; API keys</div>
+          </div>
+          <ModelKeySettings model={model} onChangeModel={onChangeModel} loading={loading} />
         </div>
-      </div>
+      )}
 
       {/* Wallet kit */}
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
@@ -290,11 +382,16 @@ export function SettingsPanel({ buildMode, onChangeBuildMode, model, onChangeMod
             <div className="text-[11px] text-white/30 mt-0.5">Inject the native Kaspa wallet into every build</div>
           </div>
           <button
+            type="button"
             onClick={() => onChangeWalletKit(!walletKit)}
             disabled={loading}
-            className={`relative w-11 h-6 rounded-full transition-colors ${walletKit ? "bg-[#70C7BA]" : "bg-white/10"}`}
+            aria-pressed={walletKit}
+            className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${walletKit ? "bg-[#70C7BA]" : "bg-white/15"}`}
           >
-            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${walletKit ? "translate-x-5" : "translate-x-0.5"}`} />
+            <span
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+              style={{ left: walletKit ? "22px" : "2px" }}
+            />
           </button>
         </div>
       </div>

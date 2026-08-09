@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, KeyRound, Server, CheckCircle, Sparkles, ArrowRight, Github, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getLocalProviders, saveLocalProvider, PROVIDER_PRESETS } from "./localLlm";
+import { getLocalProviders, saveLocalProvider, PROVIDER_PRESETS, LOCAL_MODEL_PREFIX } from "./localLlm";
 
 const E2B_KEY_STORAGE = "ttt_builder_e2b_key";
 const ONBOARDING_DONE = "ttt_builder_onboarded";
@@ -12,7 +12,15 @@ export function isStandalone() {
 }
 
 export function getE2BKey() {
-  try { return localStorage.getItem(E2B_KEY_STORAGE) || ""; } catch { return ""; }
+  try {
+    const ls = localStorage.getItem(E2B_KEY_STORAGE) || "";
+    if (ls) return ls;
+  } catch {}
+  // Safer fallback: read from .env (VITE_E2B_API_KEY) — see .env.example
+  try {
+    const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+    return (env.VITE_E2B_API_KEY || "").trim();
+  } catch { return ""; }
 }
 
 export function setE2BKey(key) {
@@ -37,8 +45,9 @@ function needsOnboarding() {
 export default function OnboardingModal() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0); // 0=model, 1=e2b, 2=done
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState("gemini-2.0-flash");
   const [apiKey, setApiKey] = useState("");
+  const [nickname, setNickname] = useState("Gemini Flash (free)");
   const [e2bKey, setE2bKey] = useState(() => getE2BKey());
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -57,9 +66,13 @@ export default function OnboardingModal() {
   if (!isStandalone()) return null;
 
   const autoDetectProvider = (modelStr) => {
-    if (modelStr.includes("/")) return "openrouter";
-    if (modelStr.startsWith("deepseek")) return "deepseek";
-    return "openrouter";
+    const s = modelStr.toLowerCase();
+    if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
+    if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral")) return "groq";
+    if (s.includes("/")) return "openrouter";
+    if (s.startsWith("deepseek")) return "deepseek";
+    if (s.startsWith("mistral") || s.startsWith("codestral")) return "mistral";
+    return "google"; // default to Google Gemini (free + CORS-friendly)
   };
 
   const addModel = () => {
@@ -70,13 +83,15 @@ export default function OnboardingModal() {
     }
     const provider = autoDetectProvider(model);
     const preset = PROVIDER_PRESETS.find((p) => p.provider === provider) || PROVIDER_PRESETS[0];
-    saveLocalProvider({
+    const entry = saveLocalProvider({
       provider,
-      label: model.trim(),
+      label: nickname.trim() || model.trim(),
       model: model.trim(),
       baseUrl: preset.baseUrl,
       apiKey: apiKey.trim(),
     });
+    // Make this the active model so the selector defaults to it, not a hosted model.
+    try { localStorage.setItem("ttt_builder_model", `${LOCAL_MODEL_PREFIX}${entry.id}`); } catch {}
     setStep(1);
   };
 
@@ -154,11 +169,21 @@ export default function OnboardingModal() {
                       <input
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
-                        placeholder="nvidia/nemotron-3-super-120b-a12b:free"
+                        placeholder="gemini-2.0-flash"
                         className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                         autoFocus
                       />
-                      <p className="text-[10px] text-white/30 mt-1">Paste any model. Models with a "/" are auto-detected as OpenRouter. Get a free key at openrouter.ai/keys.</p>
+                      <p className="text-[10px] text-white/30 mt-1">Default: <b className="text-[#4285F4]">Google Gemini 2.0 Flash</b> — free tier, works from the browser. Get a key at <b className="text-[#4285F4]">aistudio.google.com/apikey</b>. You can also use <b className="text-[#70C7BA]">Groq</b> (console.groq.com/keys — fast, free) or any OpenAI-compatible provider.</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">Nickname</label>
+                      <input
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder="e.g. Free Key, Paid Key, Work"
+                        className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
+                      />
+                      <p className="text-[10px] text-white/30 mt-1">Give this key a name so you can tell multiple keys apart.</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">API key</label>
@@ -166,7 +191,7 @@ export default function OnboardingModal() {
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         type="password"
-                        placeholder="sk-or-v1-..."
+                        placeholder="AIza..."
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                       />
                     </div>
