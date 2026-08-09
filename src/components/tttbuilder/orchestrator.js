@@ -1,8 +1,28 @@
-// TTT Agent 1 orchestration — plans a build, then dispatches as many
-// specialist subagents as the job needs, one file-group each.
+// TTT Agent 1 orchestration — plans a build, then dispatches specialist
+// subagents in a PARALLEL DAG. Up to 10 agents fire at once; each local-model
+// agent chains up to 7 calls (digest→plan→detail→write→continue×3), giving
+// 224K effective context (>200K target) per agent, with 10 Qwen inferences
+// in flight simultaneously — "10 Qwens per second."
+//
+// Principles (per https://x.com/0xheycat/status/2078687584872796383):
+//  - Durable handoff:  each chain link passes a compressed digest forward,
+//                      never raw 32K context — so the agent never starts blank.
+//  - Smallest slice:   the planner splits work into the FEWEST agents that can
+//                      own non-overlapping file sets; no agent rewrites another's.
+//  - No blind retries: a failed agent's files go to the Repair Agent with the
+//                      failure reason — not retried identically.
+//  - Evidence-based:   the File Reviewer reads the ACTUAL written files and
+//                      reverts unrelated changes — done is proven, not claimed.
+//
 import { base44 } from "@/api/base44Client";
 import { applyFileOps, FILE_OPS_SCHEMA, norm, findMissingImports } from "./projectFiles";
 import { invokeLLMWithRetry } from "./llmRetry";
+import { isChainableLocal, chainedAgentCall } from "./chainLocal";
+
+// Hard cap on concurrent agents. 10 = 10 simultaneous LLM calls (one per agent).
+// Local models that chain will have 10 × (chain depth) total calls, but only
+// 10 in flight at any instant — Ollama's OLLAMA_NUM_PARALLEL should be ≥ 10.
+const MAX_PARALLEL_AGENTS = 10;
 
 /** Models sometimes wrap structured output in `response`, or return JSON with trailing junk. */
 export function parseResult(raw) {
@@ -40,7 +60,7 @@ const PLAN_SCHEMA = {
     plan: { type: "string", description: "One short sentence describing the overall build plan" },
     agents: {
       type: "array",
-      description: "One entry per specialist subagent. Keep it TIGHT: 1-2 agents for a small change or simple app, 3-4 for a medium app, 5 maximum. Order them so dependencies come first.",
+      description: "One entry per specialist subagent. Keep it TIGHT: 1-2 agents for a small change or simple app, 3-4 for a medium app, up to 10 for a large multi-feature app where each agent owns a non-overlapping file set. Order them so dependencies come first. More agents = more parallelism (up to 10 concurrent LLM calls).",
       items: {
         type: "object",
         properties: {
@@ -97,11 +117,12 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
     prompt: `You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
 
 Rules for the plan:
-- FEWEST AGENTS POSSIBLE. Hard cap: 5. A simple app (a game, a small dashboard, a landing page) is 1-2 agents total; do not split a small build into many tiny agents — it is slower and produces worse code. Each agent can own 4-6 files.
-- Only add an agent when the work genuinely cannot be written by the previous one.
+- FEWEST AGENTS POSSIBLE for the scope — but use MORE agents for parallelism on large builds. Hard cap: 10 agents. A simple app (a game, a small dashboard, a landing page) is 1-2 agents; a medium app is 3-4; a large multi-feature app can use up to 10, each owning a non-overlapping file set. More agents = more parallel LLM calls = faster build.
+- Only add an agent when the work genuinely cannot be written by the previous one. Each agent can own 3-6 files.
 - The "contract" MUST list the exact, complete set of files that will exist. Nobody may import a path that is not in that list — a missing import crashes the whole build.
 - The "contract" is law: exact file paths, exact global/exported function names, CSS variable + class naming, and the shared state shape, so the separately-written files fit together perfectly.
 - Put shared foundations (styles, state, api layer) before the features that consume them, and the entry point (index.html / src/main.jsx) last.
+- DAG PARALLELISM: agents run concurrently — they cannot see each other's output. The contract must be complete enough that each agent can write its files independently.
 
 ${projectDump}
 
@@ -114,7 +135,7 @@ User request: ${userPrompt}`,
   });
 
   const plan = parseResult(planRaw);
-  const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files)).slice(0, 5);
+  const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files)).slice(0, MAX_PARALLEL_AGENTS);
   if (!agents.length) throw new Error("The orchestrator produced no plan. Try again.");
 
   onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(t0), text: plan.reasoning || plan.plan } });
@@ -126,12 +147,15 @@ User request: ${userPrompt}`,
   const log = [];
   const failedFiles = []; // files owed by agents that failed — handed to the Repair Agent
 
-  // 2. DISPATCH — run ALL subagents in PARALLEL for speed. Each agent gets the
-  // ORIGINAL project files as context (they run concurrently, so they can't see
-  // each other's output) and writes only its own files per the shared contract.
-  // The Repair Agent fixes any cross-agent import gaps afterward. This lets
-  // local models (Ollama, Groq, etc.) "join forces" — multiple inferences fly
-  // at once instead of waiting in a queue.
+  // 2. DISPATCH — run ALL subagents in PARALLEL (DAG). Up to 10 agents fire
+  // simultaneously — 10 concurrent LLM calls. Local models that chain will have
+  // 10 × (3-4 chain links) total calls, but only 10 in flight at any instant.
+  // Each agent gets the ORIGINAL project files as context (they run concurrently,
+  // so they can't see each other's output) and writes only its own files per
+  // the shared contract. The Repair Agent fixes cross-agent import gaps after.
+  if (agents.length > 1) {
+    onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `DAG dispatch: ${agents.length} agents firing in parallel (${isChainableLocal(model) ? "local chain mode" : "hosted mode"})…` } });
+  }
   const existingPaths = new Set(files.map(f => f.path));
   const wantsWallet = /wallet|balance|seed|send kas|receive|transaction/i.test(userPrompt);
   const sharedContext = files
@@ -168,13 +192,29 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
       let ops = null, lastErr = null;
       for (let attempt = 0; attempt < 2 && !ops; attempt++) {
         try {
-          const raw = await invokeLLMWithRetry({
-            system: baseRules,
-            prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
-            model,
-            file_urls: fileUrls.length ? fileUrls : undefined,
-            response_json_schema: FILE_OPS_SCHEMA,
-          });
+          let raw;
+          // Local models (Qwen, Llama, etc.) chain 3-4 calls to reach ~128K
+          // effective context — each link digests and hands off to the next.
+          // Hosted models (Agent 1, GPT, Gemini) have 200K ctx and skip the chain.
+          if (isChainableLocal(model)) {
+            raw = await chainedAgentCall({
+              system: baseRules,
+              agentPrompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+              model,
+              fileUrls,
+              responseJsonSchema: FILE_OPS_SCHEMA,
+              files: working,
+              onProgress,
+            });
+          } else {
+            raw = await invokeLLMWithRetry({
+              system: baseRules,
+              prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+              model,
+              file_urls: fileUrls.length ? fileUrls : undefined,
+              response_json_schema: FILE_OPS_SCHEMA,
+            });
+          }
           ops = parseResult(raw);
         } catch (err) {
           lastErr = err;
