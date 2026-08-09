@@ -149,20 +149,29 @@ export async function callLocalLlm(args) {
   const baseUrl = (provider.baseUrl || "").replace(/\/$/, "");
   if (!baseUrl) throw new Error(`"${provider.label}" has no base URL. Edit it in Open Models.`);
 
-  let content = args.prompt || "";
+  // Split system prompt (TTT Agent skills / base rules) from the task prompt.
+  // Smaller local models (Ollama qwen, llama, etc.) follow instructions far
+  // better when the agent skills are in a dedicated system role message —
+  // otherwise they treat the entire blob as "user text" and produce thin output.
+  const systemContent = args.system || "";
+  let userContent = args.prompt || "";
   const jsonSchema = args.response_json_schema || null;
   if (jsonSchema) {
-    content += `\n\nRespond with ONLY valid JSON (no markdown fences, no commentary) matching this schema:\n${JSON.stringify(jsonSchema)}`;
+    userContent += `\n\nRespond with ONLY valid JSON (no markdown fences, no commentary) matching this schema:\n${JSON.stringify(jsonSchema)}`;
   }
 
   // OpenAI vision-style content parts. OpenRouter + OpenAI-compatible vision models
   // accept image_url; non-vision models will reject — the error surfaces to the user.
-  const parts = [{ type: "text", text: content }];
+  const parts = [{ type: "text", text: userContent }];
   if (Array.isArray(args.file_urls)) {
     args.file_urls.forEach((u) => {
       if (typeof u === "string") parts.push({ type: "image_url", image_url: { url: u } });
     });
   }
+
+  const messages = [];
+  if (systemContent) messages.push({ role: "system", content: systemContent });
+  messages.push({ role: "user", content: parts });
 
   const headers = { "Content-Type": "application/json" };
   if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
@@ -185,8 +194,9 @@ export async function callLocalLlm(args) {
       headers,
       body: JSON.stringify({
         model: provider.model,
-        messages: [{ role: "user", content: parts }],
+        messages,
         temperature: 0.3,
+        max_tokens: 8192,
       }),
       signal: controller.signal,
     });

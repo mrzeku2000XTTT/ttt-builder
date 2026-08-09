@@ -28,10 +28,16 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   if (hostedProvider) {
     return callLocalLlm({ ...args, _resolvedProvider: hostedProvider });
   }
+  // Base44 InvokeLLM has no separate system role — fold it into the prompt so
+  // hosted/keyless models still get the TTT Agent skills in their context.
+  const { system, ...rest } = args;
+  if (system) {
+    rest.prompt = `${system}\n\n${rest.prompt || ""}`;
+  }
   let lastErr = null;
   for (let attempt = 0; attempt <= max; attempt++) {
     try {
-      return await base44.integrations.Core.InvokeLLM(args);
+      return await base44.integrations.Core.InvokeLLM(rest);
     } catch (err) {
       lastErr = err;
       if (attempt === max || !isTransientError(err)) throw err;

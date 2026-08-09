@@ -491,7 +491,8 @@ function TTTBuilderStudio() {
           ? "You are in PLAN MODE. Do NOT write or modify any code. Read the user's request and the current project, then produce a clear, structured plan: what files to create/edit, what each will contain, the data model, the UI sections, and the order of work. End with a one-line summary. The user will review this plan before building."
           : "You are in DISCUSS MODE. Do NOT write or modify any code. Answer the user's question about the project, architecture, design, or approach in plain language. Be concise and helpful.";
         const raw = await invokeLLMWithRetry({
-          prompt: `${baseRules}\n\n${modeDirective}\n\n${projectDump}\n${attachmentNote}\n${history ? `Conversation so far:\n${history}\n` : ""}\nUser: ${userPrompt}`,
+          system: baseRules,
+          prompt: `${modeDirective}\n\n${projectDump}\n${attachmentNote}\n${history ? `Conversation so far:\n${history}\n` : ""}\nUser: ${userPrompt}`,
           model: llmModel,
           file_urls: fileUrls.length ? fileUrls : undefined,
         });
@@ -543,9 +544,8 @@ function TTTBuilderStudio() {
         planText = run.summary;
       } else {
         const raw = await invokeLLMWithRetry({
-          prompt: `${baseRules}
-
-        ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
+          system: baseRules,
+          prompt: `${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
           ${attachmentNote}
           ${userPrompt}
 
