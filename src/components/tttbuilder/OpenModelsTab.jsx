@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight, ExternalLink, Globe, Search, Check } from "lucide-react";
+import { X, Plus, Trash2, KeyRound, ChevronDown, ChevronRight, ExternalLink, Globe, Search, Check, Eye, EyeOff } from "lucide-react";
 import { getLocalProviders, saveLocalProvider, removeLocalProvider, PROVIDER_PRESETS } from "./localLlm";
 
 /**
@@ -109,6 +109,7 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
   const [provider, setProvider] = useState("openrouter");
   const [baseUrl, setBaseUrl] = useState(PROVIDER_PRESETS[0].baseUrl);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const [err, setErr] = useState("");
 
   if (!open) return null;
@@ -119,7 +120,7 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
     const s = modelStr.toLowerCase();
     if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
     if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral") || s.includes("groq")) return "groq";
-    if (s.startsWith("deepseek")) return "deepseek";
+    if (s.startsWith("deepseek")) return "deepseek";  // deepseek-v4-pro, deepseek-v4-flash, deepseek-chat, etc.
     if (s.startsWith("mistral") || s.startsWith("codestral") || s.startsWith("pixtral")) return "mistral";
     if (s.startsWith("qwen") || s.includes("qwen")) return "qwen_intl";
     if (s.startsWith("kimi") || s.includes("moonshot")) return "moonshot_intl";
@@ -201,7 +202,8 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#70C7BA] flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-white truncate">{p.label}</div>
-                  <div className="text-[10px] text-white/40 truncate">{p.model} - {p.baseUrl}</div>
+                  <div className="text-[10px] text-white/40 truncate">{p.model} · {p.baseUrl}</div>
+                  {p.apiKey && <div className="text-[9px] text-emerald-400/60 font-mono">key: {"•".repeat(Math.min(p.apiKey.length, 12))}</div>}
                 </div>
                 <button onClick={() => { removeLocalProvider(p.id); refresh(); }} className="text-white/40 hover:text-red-400 flex-shrink-0">
                   <Trash2 className="w-3.5 h-3.5" />
@@ -226,13 +228,22 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
             placeholder="Nickname (e.g. Free Key, Paid Key, Work)"
             className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
           />
-          <input
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            type="password"
-            placeholder={provider === "ollama" ? "API key (not needed for local Ollama)" : "API key"}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none"
-          />
+          <div className="relative">
+            <input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              type={showKey ? "text" : "password"}
+              placeholder={provider === "ollama" ? "API key (not needed for local Ollama)" : "API key — stored locally only"}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-8 text-xs text-white placeholder:text-white/30 outline-none font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+            >
+              {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+          </div>
 
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}

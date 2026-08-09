@@ -329,6 +329,7 @@ function KeyLinks({ provider }) {
     if (provider === "anthropic") return p.provider === "anthropic";
     if (provider === "openai") return p.provider === "openai";
     if (provider === "google") return p.provider === "google";
+    if (provider === "deepseek") return p.provider === "deepseek";
     return false;
   });
 

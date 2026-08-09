@@ -16,6 +16,8 @@ export const BUILDER_MODELS = [
   { id: "gemini_3_1_pro", label: "Gemini 3.1 Pro" },
   { id: "gemini_3_flash", label: "Gemini 3 Flash (fast)" },
   { id: "gpt_5_mini", label: "GPT-5 Mini (fast)" },
+  { id: "deepseek_v4_pro", label: "DeepSeek V4 Pro" },
+  { id: "deepseek_v4_flash", label: "DeepSeek V4 Flash" },
 ];
 
 const ADD_VALUE = "__add_local__";
