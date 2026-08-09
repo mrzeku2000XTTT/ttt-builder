@@ -464,7 +464,21 @@ function TTTBuilderStudio() {
       const isAgent1 = model === "ttt_agent_1";
       // "ttt_agent_1" is a UI alias — resolve it to the real model id before any LLM call.
       const llmModel = isAgent1 ? TTT_AGENT_1 : model;
-      let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${MULTIPLAYER_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      // Context budget: the full system prompt is ~32K chars (~8K tokens). Local
+      // models (qwen 32K ctx) struggle when wallet/kaspa/argent rules bloat the
+      // prompt for a simple landing page. Only include the heavy rules when the
+      // user's prompt actually touches those domains — saves ~17K chars (~4.3K
+      // tokens) for non-crypto builds, leaving room for file context + output.
+      const isLocal = !isAgent1 && model !== "automatic" && !model.startsWith("gpt") && !model.startsWith("claude") && !model.startsWith("gemini");
+      const p = userPrompt.toLowerCase();
+      const needsWallet = walletKit || /wallet|balance|seed|send kas|receive|transaction|kaspa|krc-20|zeku/i.test(p);
+      const needsMultiplayer = /multiplayer|realtime|socket|live room|game lobby|duel|battle|co-op|versus|1v1/i.test(p);
+      const needsKaspaProtocols = /kaspa|dag|blockdag|krc-20|mempool|utxo|node/i.test(p);
+      const needsArgent = /argent|covenant|smart contract|kaspinator|opcode/i.test(p);
+      // TTT Agent 1 (hosted, 200K ctx) always gets the full prompt — it can handle it.
+      // Local / BYO-key models get a trimmed prompt unless the domain is relevant.
+      const trim = isLocal;
+      let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${trim && !needsMultiplayer ? "" : MULTIPLAYER_RULE}${IMAGE_RULE}${trim && !needsKaspaProtocols ? "" : KASPA_PROTOCOLS_RULE}${trim && !needsArgent ? "" : ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${needsWallet ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       // If the user is adding an agent/AI/workflow to a project that already has
       // files, make it crystal clear: this is an EXTENSION, not a rebuild.

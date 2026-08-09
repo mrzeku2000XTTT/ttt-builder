@@ -188,6 +188,12 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
           Keys are stored <b>only in this browser</b> (localStorage) and sent directly to the provider. They never touch Base44 or any other server. Paste any model name — the provider is auto-detected.
         </div>
 
+        {provider === "ollama" && (
+          <div className="text-[10px] sm:text-[11px] text-amber-200/80 mb-3 px-2.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 leading-relaxed">
+            <b>Parallel mode:</b> TTT Builder fires all subagents at once. To make Ollama actually run them concurrently (not queue them), start it with <code className="text-amber-300">OLLAMA_NUM_PARALLEL=4 ollama serve</code> (or higher if your CPU/GPU can handle it). This lets the same qwen model power multiple agents simultaneously.
+          </div>
+        )}
+
         {list.length > 0 && (
           <div className="space-y-1.5 mb-3">
             {list.map((p) => (
