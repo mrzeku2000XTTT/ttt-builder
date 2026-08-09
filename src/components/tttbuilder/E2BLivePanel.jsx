@@ -23,14 +23,10 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
     setState({ status: "booting", url: null, sandboxId: null, logs: [], error: null });
     try {
       if (standalone) {
-        // Standalone: call E2B directly from the browser with the locally-stored key.
         if (!e2bKey) {
           setState({ status: "error", url: null, sandboxId: null, logs: [], error: "No E2B API key found. Add one in Settings or Onboarding to run npm projects live." });
           return;
         }
-        // E2B REST API — create a sandbox, upload files, start the dev server.
-        // Uses the E2B Code Interpreter via dynamic import (loaded from esm.sh so
-        // the standalone repo doesn't need the package installed).
         let Sandbox;
         try {
           const mod = await import(/* @vite-ignore */ "https://esm.sh/@e2b/code-interpreter@1.0.2");
@@ -41,12 +37,11 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
         }
         const sbx = await Sandbox.create({ apiKey: e2bKey });
         const APP = "/home/user/app";
-        // Write all project files into the sandbox
         for (const f of files) {
           try { await sbx.files.write(`${APP}/${f.path}`, f.content); } catch {}
         }
         const pkg = files.find(f => f.path === "package.json");
-        const logs = [`● sandbox ${sbx.sandboxId} started`];
+        const logs = [`sandbox ${sbx.sandboxId} started`];
 
         if (pkg) {
           let pkgObj = {};
@@ -54,7 +49,6 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
           const deps = { ...(pkgObj.dependencies || {}), ...(pkgObj.devDependencies || {}) };
           const scripts = pkgObj.scripts || {};
 
-          // Install deps
           const install = await sbx.commands.run("npm install --no-audit --no-fund", { cwd: APP, timeoutMs: 120000 });
           logs.push(`$ npm install → exit ${install.exitCode}`);
           if (install.stderr) logs.push(install.stderr.slice(-1000));
@@ -63,8 +57,6 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange, on
             return;
           }
 
-          // Vite projects: validate build, then inject a wrapper config so Vite
-          // accepts the E2B sandbox hostname (allowedHosts) and binds to 0.0.0.0:3000.
           if (deps.vite) {
             const build = await sbx.commands.run("npx vite build", { cwd: APP, timeoutMs: 90000 });
             logs.push(`$ npx vite build → exit ${build.exitCode}`);
@@ -84,7 +76,7 @@ export default defineConfig(async (env) => {
   return mergeConfig(user, { server: { host: '0.0.0.0', port: 3000, strictPort: true, allowedHosts: true, hmr: { clientPort: 443 } } });
 });`;
             await sbx.files.write(`${APP}/vite.e2b.config.mjs`, VITE_WRAPPER);
-            logs.push("● injected vite.e2b.config.mjs (allowedHosts)");
+            logs.push("injected vite.e2b.config.mjs (allowedHosts)");
             await sbx.commands.run("npx vite --config vite.e2b.config.mjs", { cwd: APP, background: true, timeoutMs: 600000 });
             logs.push("$ npx vite --config vite.e2b.config.mjs (background, port 3000)");
             var devPort = 3000;
@@ -95,18 +87,15 @@ export default defineConfig(async (env) => {
             var devPort = 3000;
           }
         } else {
-          // Plain HTML — static server
           var devPort = 8080;
           await sbx.commands.run(`python3 -m http.server ${devPort} --bind 0.0.0.0`, { cwd: APP, background: true, timeoutMs: 600000 });
           logs.push(`$ python3 -m http.server ${devPort}`);
         }
 
-        // Build the preview URL
         const hostname = typeof sbx.getUrl === "function"
           ? sbx.getUrl(devPort)
-          : `https://${devPort}-${sbx.sandboxId}.e2b.dev`;
+          : `https://${sbx.sandboxId}-${devPort}.e2b.dev`;
 
-        // Poll until the server actually responds — otherwise the iframe loads a dead page
         let ready = false;
         for (let i = 0; i < 20; i++) {
           await new Promise(r => setTimeout(r, 2000));
@@ -115,7 +104,7 @@ export default defineConfig(async (env) => {
             ready = true; break;
           } catch { /* not up yet */ }
         }
-        logs.push(ready ? `● live at ${hostname}` : `⚠️ server not responding yet at ${hostname}`);
+        logs.push(ready ? `live at ${hostname}` : `server not responding yet at ${hostname}`);
         setState({
           status: "live",
           url: hostname,
@@ -124,7 +113,6 @@ export default defineConfig(async (env) => {
           error: null,
         });
       } else {
-        // Hosted: use the backend function with the server-side E2B key.
         const res = await base44.functions.invoke("e2bSandbox", { action: "run", files });
         const d = res?.data || res || {};
         if (d.error) {
@@ -132,8 +120,7 @@ export default defineConfig(async (env) => {
         } else if (d.url && d.ready) {
           setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: d.logs || [], error: null });
         } else if (d.url && d.ready === false) {
-          // Server started but didn't respond in time — show it anyway with a warning
-          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: [...(d.logs || []), "⚠️ server still warming up — reload in a few seconds if blank"], error: null });
+          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: [...(d.logs || []), "server still warming up — reload in a few seconds if blank"], error: null });
         } else {
           setState({ status: "error", url: null, sandboxId: null, logs: d.logs || [], error: "No preview URL returned from the sandbox." });
         }
@@ -152,7 +139,7 @@ export default defineConfig(async (env) => {
 
   useEffect(() => {
     if (state.status !== "live" || !state.sandboxId) return;
-    if (standalone) return; // standalone sandboxes auto-timeout; no keepalive needed
+    if (standalone) return;
     const id = setInterval(() => {
       base44.functions.invoke("e2bSandbox", { action: "keepalive", sandboxId: state.sandboxId }).catch(() => {});
     }, 60000);
