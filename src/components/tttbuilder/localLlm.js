@@ -20,33 +20,33 @@ export const PROVIDER_PRESETS = [
   { provider: "mistral", label: "Mistral AI", baseUrl: "https://api.mistral.ai/v1", keyUrl: "https://console.mistral.ai/api-keys", note: "Browser CORS-friendly. European provider.", placeholderModel: "mistral-small-latest", region: "EU", cors: true },
 
   // ─── Western providers (may need CORS proxy for browser use) ───
-  { provider: "openai", label: "OpenAI", baseUrl: "https://api.openai.com/v1", keyUrl: "https://platform.openai.com/api-keys", note: "Official OpenAI. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "gpt-4o", region: "US", cors: false },
-  { provider: "anthropic", label: "Anthropic (Claude)", baseUrl: "https://api.anthropic.com/v1", keyUrl: "https://console.anthropic.com", note: "Official Anthropic. Needs a CORS proxy for browser use. Use OpenRouter for browser-friendly access.", placeholderModel: "claude-sonnet-4-20250514", region: "US", cors: false },
-  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com", keyUrl: "https://platform.deepseek.com/api_keys", note: "V4 models. OpenAI-compatible. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "deepseek-v4-flash", region: "China/Global", cors: false },
-  { provider: "xai", label: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", keyUrl: "https://console.x.ai", note: "Grok models. May need a CORS proxy for browser use. Also on OpenRouter.", placeholderModel: "grok-3", region: "US", cors: false },
-  { provider: "perplexity", label: "Perplexity", baseUrl: "https://api.perplexity.ai", keyUrl: "https://docs.perplexity.ai", note: "Online models. May need a CORS proxy for browser use.", placeholderModel: "sonar", region: "US", cors: false },
-  { provider: "fireworks", label: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1", keyUrl: "https://fireworks.ai/api-keys", note: "200+ open-source models. May need a CORS proxy for browser use.", placeholderModel: "accounts/fireworks/models/llama-v3p3-70b-instruct", region: "US", cors: false },
-  { provider: "cerebras", label: "Cerebras", baseUrl: "https://api.cerebras.ai/v1", keyUrl: "https://cloud.cerebras.ai", note: "Ultra-fast inference. May need a CORS proxy for browser use.", placeholderModel: "llama-3.3-70b", region: "US", cors: false },
-  { provider: "hyperbolic", label: "Hyperbolic", baseUrl: "https://api.hyperbolic.xyz/v1", keyUrl: "https://hyperbolic.xyz", note: "Open-source GPU inference. May need a CORS proxy for browser use.", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct", region: "US", cors: false },
+  { provider: "openai", label: "OpenAI", baseUrl: "https://api.openai.com/v1", keyUrl: "https://platform.openai.com/api-keys", note: "Official OpenAI. Routed through server proxy (CORS). Also on OpenRouter.", placeholderModel: "gpt-4o", region: "US", cors: false },
+  { provider: "anthropic", label: "Anthropic (Claude)", baseUrl: "https://api.anthropic.com/v1", keyUrl: "https://console.anthropic.com", note: "Official Anthropic. Routed through server proxy (CORS). Use OpenRouter for browser-direct.", placeholderModel: "claude-sonnet-4-20250514", region: "US", cors: false },
+  { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com", keyUrl: "https://platform.deepseek.com/api_keys", note: "V4 models. OpenAI-compatible. Routed through server proxy (CORS). Also on OpenRouter.", placeholderModel: "deepseek-v4-flash", region: "China/Global", cors: false },
+  { provider: "xai", label: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", keyUrl: "https://console.x.ai", note: "Grok models. Routed through server proxy (CORS). Also on OpenRouter.", placeholderModel: "grok-3", region: "US", cors: false },
+  { provider: "perplexity", label: "Perplexity", baseUrl: "https://api.perplexity.ai", keyUrl: "https://docs.perplexity.ai", note: "Online models. Routed through server proxy (CORS).", placeholderModel: "sonar", region: "US", cors: false },
+  { provider: "fireworks", label: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1", keyUrl: "https://fireworks.ai/api-keys", note: "200+ open-source models. Routed through server proxy (CORS).", placeholderModel: "accounts/fireworks/models/llama-v3p3-70b-instruct", region: "US", cors: false },
+  { provider: "cerebras", label: "Cerebras", baseUrl: "https://api.cerebras.ai/v1", keyUrl: "https://cloud.cerebras.ai", note: "Ultra-fast inference. Routed through server proxy (CORS).", placeholderModel: "llama-3.3-70b", region: "US", cors: false },
+  { provider: "hyperbolic", label: "Hyperbolic", baseUrl: "https://api.hyperbolic.xyz/v1", keyUrl: "https://hyperbolic.xyz", note: "Open-source GPU inference. Routed through server proxy (CORS).", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct", region: "US", cors: false },
 
   // ─── Chinese providers (international endpoints) ───
-  { provider: "qwen_intl", label: "Qwen / Alibaba (International)", baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "qwen-plus", region: "Global", cors: false },
-  { provider: "moonshot_intl", label: "Moonshot / Kimi (International)", baseUrl: "https://api.moonshot.ai/v1", keyUrl: "https://platform.moonshot.ai", note: "Kimi K2/K3 models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "kimi-k2", region: "Global", cors: false },
-  { provider: "zhipu_intl", label: "Zhipu / GLM (International)", baseUrl: "https://api.z.ai/api/paas/v4", keyUrl: "https://z.ai/model-api", note: "GLM-4/5 models. International endpoint via z.ai. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "glm-4.6", region: "Global", cors: false },
-  { provider: "minimax_intl", label: "MiniMax (International)", baseUrl: "https://api.minimax.io/v1", keyUrl: "https://platform.minimax.io", note: "MiniMax M3 models. International endpoint. OpenAI-compatible. Also on OpenRouter.", placeholderModel: "MiniMax-M3", region: "Global", cors: false },
+  { provider: "qwen_intl", label: "Qwen / Alibaba (International)", baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. International endpoint. Routed through server proxy. Also on OpenRouter.", placeholderModel: "qwen-plus", region: "Global", cors: false },
+  { provider: "moonshot_intl", label: "Moonshot / Kimi (International)", baseUrl: "https://api.moonshot.ai/v1", keyUrl: "https://platform.moonshot.ai", note: "Kimi K2/K3 models. International endpoint. Routed through server proxy. Also on OpenRouter.", placeholderModel: "kimi-k2", region: "Global", cors: false },
+  { provider: "zhipu_intl", label: "Zhipu / GLM (International)", baseUrl: "https://api.z.ai/api/paas/v4", keyUrl: "https://z.ai/model-api", note: "GLM-4/5 models. International endpoint via z.ai. Routed through server proxy. Also on OpenRouter.", placeholderModel: "glm-4.6", region: "Global", cors: false },
+  { provider: "minimax_intl", label: "MiniMax (International)", baseUrl: "https://api.minimax.io/v1", keyUrl: "https://platform.minimax.io", note: "MiniMax M3 models. International endpoint. Routed through server proxy. Also on OpenRouter.", placeholderModel: "MiniMax-M3", region: "Global", cors: false },
 
   // ─── Chinese providers (China endpoints) ───
-  { provider: "qwen_cn", label: "Qwen / Alibaba (China)", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. China endpoint. OpenAI-compatible.", placeholderModel: "qwen-plus", region: "China", cors: false },
-  { provider: "moonshot_cn", label: "Moonshot / Kimi (China)", baseUrl: "https://api.moonshot.cn/v1", keyUrl: "https://platform.moonshot.cn", note: "Kimi models. China endpoint. OpenAI-compatible.", placeholderModel: "kimi-k2", region: "China", cors: false },
-  { provider: "zhipu_cn", label: "Zhipu / GLM (China)", baseUrl: "https://open.bigmodel.cn/api/paas/v4", keyUrl: "https://open.bigmodel.cn", note: "GLM models. China endpoint via bigmodel.cn. OpenAI-compatible.", placeholderModel: "glm-4.6", region: "China", cors: false },
-  { provider: "minimax_cn", label: "MiniMax (China)", baseUrl: "https://api.minimaxi.com/v1", keyUrl: "https://platform.minimaxi.com", note: "MiniMax models. China endpoint. OpenAI-compatible.", placeholderModel: "MiniMax-M3", region: "China", cors: false },
-  { provider: "baichuan", label: "Baichuan AI", baseUrl: "https://api.baichuan-ai.com/v1", keyUrl: "https://platform.baichuan-ai.com", note: "Baichuan models. China endpoint.", placeholderModel: "Baichuan4-Turbo", region: "China", cors: false },
-  { provider: "yi", label: "Yi / 01.AI", baseUrl: "https://api.lingyiwanwu.com/v1", keyUrl: "https://platform.lingyiwanwu.com", note: "Yi series models. China endpoint.", placeholderModel: "yi-large", region: "China", cors: false },
-  { provider: "stepfun", label: "StepFun", baseUrl: "https://api.stepfun.com/v1", keyUrl: "https://platform.stepfun.com", note: "Step models. China endpoint.", placeholderModel: "step-2-16k", region: "China", cors: false },
-  { provider: "doubao", label: "ByteDance / Doubao", baseUrl: "https://ark.cn-beijing.volces.com/api/v3", keyUrl: "https://console.volcengine.com/ark", note: "Doubao models via Volcano Engine Ark. China endpoint.", placeholderModel: "doubao-pro-32k", region: "China", cors: false },
-  { provider: "hunyuan", label: "Tencent Hunyuan", baseUrl: "https://api.hunyuan.cloud.tencent.com/v1", keyUrl: "https://cloud.tencent.com/product/hunyuan", note: "Tencent Hunyuan models. China endpoint.", placeholderModel: "hunyuan-pro", region: "China", cors: false },
-  { provider: "ernie", label: "Baidu ERNIE", baseUrl: "https://qianfan.baidubce.com/v2", keyUrl: "https://qianfan.cloud.baidu.com", note: "Baidu ERNIE models via Qianfan. China endpoint.", placeholderModel: "ernie-4.0-8k", region: "China", cors: false },
-  { provider: "spark", label: "iFlyTek Spark", baseUrl: "https://spark-api-open.xf-yun.com/v1", keyUrl: "https://xinghuo.xfyun.cn", note: "iFlyTek Spark models. China endpoint.", placeholderModel: "generalv3.5", region: "China", cors: false },
+  { provider: "qwen_cn", label: "Qwen / Alibaba (China)", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", keyUrl: "https://bailian.console.aliyun.com", note: "Alibaba Qwen models. China endpoint. Routed through server proxy.", placeholderModel: "qwen-plus", region: "China", cors: false },
+  { provider: "moonshot_cn", label: "Moonshot / Kimi (China)", baseUrl: "https://api.moonshot.cn/v1", keyUrl: "https://platform.moonshot.cn", note: "Kimi models. China endpoint. Routed through server proxy.", placeholderModel: "kimi-k2", region: "China", cors: false },
+  { provider: "zhipu_cn", label: "Zhipu / GLM (China)", baseUrl: "https://open.bigmodel.cn/api/paas/v4", keyUrl: "https://open.bigmodel.cn", note: "GLM models. China endpoint via bigmodel.cn. Routed through server proxy.", placeholderModel: "glm-4.6", region: "China", cors: false },
+  { provider: "minimax_cn", label: "MiniMax (China)", baseUrl: "https://api.minimaxi.com/v1", keyUrl: "https://platform.minimaxi.com", note: "MiniMax models. China endpoint. Routed through server proxy.", placeholderModel: "MiniMax-M3", region: "China", cors: false },
+  { provider: "baichuan", label: "Baichuan AI", baseUrl: "https://api.baichuan-ai.com/v1", keyUrl: "https://platform.baichuan-ai.com", note: "Baichuan models. China endpoint. Routed through server proxy.", placeholderModel: "Baichuan4-Turbo", region: "China", cors: false },
+  { provider: "yi", label: "Yi / 01.AI", baseUrl: "https://api.lingyiwanwu.com/v1", keyUrl: "https://platform.lingyiwanwu.com", note: "Yi series models. China endpoint. Routed through server proxy.", placeholderModel: "yi-large", region: "China", cors: false },
+  { provider: "stepfun", label: "StepFun", baseUrl: "https://api.stepfun.com/v1", keyUrl: "https://platform.stepfun.com", note: "Step models. China endpoint. Routed through server proxy.", placeholderModel: "step-2-16k", region: "China", cors: false },
+  { provider: "doubao", label: "ByteDance / Doubao", baseUrl: "https://ark.cn-beijing.volces.com/api/v3", keyUrl: "https://console.volcengine.com/ark", note: "Doubao models via Volcano Engine Ark. China endpoint. Routed through server proxy.", placeholderModel: "doubao-pro-32k", region: "China", cors: false },
+  { provider: "hunyuan", label: "Tencent Hunyuan", baseUrl: "https://api.hunyuan.cloud.tencent.com/v1", keyUrl: "https://cloud.tencent.com/product/hunyuan", note: "Tencent Hunyuan models. China endpoint. Routed through server proxy.", placeholderModel: "hunyuan-pro", region: "China", cors: false },
+  { provider: "ernie", label: "Baidu ERNIE", baseUrl: "https://qianfan.baidubce.com/v2", keyUrl: "https://qianfan.cloud.baidu.com", note: "Baidu ERNIE models via Qianfan. China endpoint. Routed through server proxy.", placeholderModel: "ernie-4.0-8k", region: "China", cors: false },
+  { provider: "spark", label: "iFlyTek Spark", baseUrl: "https://spark-api-open.xf-yun.com/v1", keyUrl: "https://xinghuo.xfyun.cn", note: "iFlyTek Spark models. China endpoint. Routed through server proxy.", placeholderModel: "generalv3.5", region: "China", cors: false },
 
   // ─── Local / Self-hosted ───
   { provider: "ollama", label: "Ollama (local)", baseUrl: "http://localhost:11434/v1", keyUrl: "https://ollama.com", note: "Run models locally with Ollama. No key needed. Run `ollama serve`.", placeholderModel: "llama3.1", region: "Local", cors: true },
@@ -62,18 +62,6 @@ export function getLocalProviders() {
 }
 
 // ENV-BASED PROVIDERS (safer than localStorage).
-// Cloners can put keys in a .env file at the repo root (gitignored) and they are
-// baked into the build via Vite's import.meta.env. These are read-only from the
-// UI — you edit .env and restart `npm run dev` to change them.
-//
-// Supported .env keys:
-//   VITE_GEMINI_API_KEY            → auto-creates a Google Gemini 2.0 Flash entry
-//   VITE_DEEPSEEK_API_KEY          → auto-creates a DeepSeek V4 Flash entry
-//   VITE_LLM_API_KEY               → creates a generic entry (pair with below)
-//   VITE_LLM_MODEL, VITE_LLM_BASE_URL, VITE_LLM_PROVIDER, VITE_LLM_LABEL
-//
-// Env entries get stable ids prefixed `env_` so they never collide with
-// localStorage entries (ids like `m_<ts>_<rand>`).
 export function getEnvProviders() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const out = [];
@@ -116,7 +104,6 @@ export function getEnvProviders() {
   return out;
 }
 
-// All usable providers: localStorage (editable) + env (read-only).
 export function getAllProviders() {
   return [...getLocalProviders(), ...getEnvProviders()];
 }
@@ -154,18 +141,24 @@ export function resolveLocalModel(modelId) {
   return getAllProviders().find(p => p.id === id) || null;
 }
 
-// Build an OpenAI-compatible chat-completions request and call the provider directly
-// from the browser. Returns a string, or a parsed object when response_json_schema is set.
+// Build an OpenAI-compatible chat-completions request and call the provider.
+// CORS-friendly providers (Groq, Google, OpenRouter, Ollama) call directly from
+// the browser. Non-CORS providers (DeepSeek, OpenAI direct, Anthropic direct,
+// most Chinese providers) are routed through the backend proxyLlmCall function
+// so they actually work without CORS errors.
 export async function callLocalLlm(args) {
   const provider = args._resolvedProvider || resolveLocalModel(args.model);
   if (!provider) throw new Error("Open model not found. Add one in Settings → Models & API keys (or set VITE_LLM_API_KEY / VITE_GEMINI_API_KEY in your .env).");
   const baseUrl = (provider.baseUrl || "").replace(/\/$/, "");
   if (!baseUrl) throw new Error(`"${provider.label}" has no base URL. Edit it in Open Models.`);
 
+  // Check if this provider supports CORS (browser-direct) or needs a server proxy.
+  // DeepSeek, OpenAI (direct), Anthropic (direct) all block browser CORS — route
+  // them through the backend proxyLlmCall function so they actually work.
+  const preset = PROVIDER_PRESETS.find(p => p.provider === provider.provider);
+  const needsProxy = preset ? !preset.cors : true; // unknown providers default to proxy
+
   // Split system prompt (TTT Agent skills / base rules) from the task prompt.
-  // Smaller local models (Ollama qwen, llama, etc.) follow instructions far
-  // better when the agent skills are in a dedicated system role message —
-  // otherwise they treat the entire blob as "user text" and produce thin output.
   const systemContent = args.system || "";
   let userContent = args.prompt || "";
   const jsonSchema = args.response_json_schema || null;
@@ -173,8 +166,6 @@ export async function callLocalLlm(args) {
     userContent += `\n\nRespond with ONLY valid JSON (no markdown fences, no commentary) matching this schema:\n${JSON.stringify(jsonSchema)}`;
   }
 
-  // OpenAI vision-style content parts. OpenRouter + OpenAI-compatible vision models
-  // accept image_url; non-vision models will reject — the error surfaces to the user.
   const parts = [{ type: "text", text: userContent }];
   if (Array.isArray(args.file_urls)) {
     args.file_urls.forEach((u) => {
@@ -186,51 +177,69 @@ export async function callLocalLlm(args) {
   if (systemContent) messages.push({ role: "system", content: systemContent });
   messages.push({ role: "user", content: parts });
 
-  const headers = { "Content-Type": "application/json" };
-  if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
-  if (provider.provider === "openrouter") {
-    headers["HTTP-Referer"] = "https://ttt.builder";
-    headers["X-Title"] = "TTT Builder";
-  }
-
-  // Free / queued models (e.g. OpenRouter free tier) can take a long time or hang
-  // silently. Cap the wait so the build fails fast with a clear message instead of
-  // spinning "Building your site..." forever.
-  const TIMEOUT_MS = 120000;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  let res;
-  try {
-    res = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: 0.3,
-        max_tokens: 8192,
-      }),
-      signal: controller.signal,
+  // Route through the backend proxy when the provider blocks browser CORS
+  // (DeepSeek, OpenAI direct, Anthropic direct, most Chinese providers).
+  // CORS-friendly providers (Groq, Google, OpenRouter, Ollama) call directly.
+  let text;
+  if (needsProxy) {
+    const { base44 } = await import("@/api/base44Client");
+    const proxyRes = await base44.functions.invoke("proxyLlmCall", {
+      baseUrl,
+      model: provider.model,
+      messages,
+      apiKey: provider.apiKey,
+      temperature: 0.3,
+      maxTokens: 8192,
+      jsonSchema: jsonSchema || null,
     });
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
+    const pd = proxyRes?.data || proxyRes || {};
+    if (pd.error) throw new Error(`${provider.label} (proxy): ${pd.error}`);
+    text = pd.content;
+    if (text == null) throw new Error(`${provider.label} (proxy) returned no content`);
+  } else {
+    const headers = { "Content-Type": "application/json" };
+    if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
+    if (provider.provider === "openrouter") {
+      headers["HTTP-Referer"] = "https://ttt.builder";
+      headers["X-Title"] = "TTT Builder";
     }
-    throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. This provider likely blocks browser requests (CORS). Use a browser-friendly provider instead: Groq (console.groq.com — free, fast), Google Gemini (aistudio.google.com — free), or OpenRouter (openrouter.ai). TokenRouter, DeepSeek, and most direct APIs do NOT work from the browser.`);
-  } finally {
-    clearTimeout(timer);
-  }
 
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`${provider.label} error ${res.status}: ${txt.slice(0, 300)}`);
-  }
+    const TIMEOUT_MS = 120000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  const data = await res.json();
-  const out = data?.choices?.[0]?.message?.content;
-  const text = Array.isArray(out) ? out.map((p) => p.text || "").join("") : out;
-  if (text == null) throw new Error(`${provider.label} returned no content`);
+    let res;
+    try {
+      res = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: provider.model,
+          messages,
+          temperature: 0.3,
+          max_tokens: 8192,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
+      }
+      throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. This provider likely blocks browser requests (CORS). Use a browser-friendly provider instead: Groq (console.groq.com — free, fast), Google Gemini (aistudio.google.com — free), or OpenRouter (openrouter.ai).`);
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`${provider.label} error ${res.status}: ${txt.slice(0, 300)}`);
+    }
+
+    const data = await res.json();
+    const out = data?.choices?.[0]?.message?.content;
+    text = Array.isArray(out) ? out.map((p) => p.text || "").join("") : out;
+    if (text == null) throw new Error(`${provider.label} returned no content`);
+  }
 
   if (jsonSchema) {
     const cleaned = String(text).replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
@@ -255,11 +264,6 @@ export async function callLocalLlm(args) {
 }
 
 // ─── Hosted model key storage ──────────────────────────────────────────
-// Lets users bring their own API keys for hosted models (Claude, GPT, Gemini)
-// instead of using Base44 credits. Only TTT Agent 1 and "automatic" use the
-// built-in Base44 InvokeLLM. Keys are stored locally in the browser and sent
-// directly to the provider — never to Base44.
-
 const HOSTED_KEY_STORAGE = "ttt_builder_hosted_keys";
 
 export const HOSTED_MODEL_REGISTRY = {
@@ -275,19 +279,13 @@ export const HOSTED_MODEL_REGISTRY = {
   "deepseek_v4_flash": { label: "DeepSeek V4 Flash", provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-flash" },
 };
 
-// ─── Provider base URL options ─────────────────────────────────────────
-// Each provider can be reached through multiple endpoints. The user picks
-// the one that works best for their setup (CORS-friendly proxy vs direct).
-// When switching endpoints, the model name is auto-prefixed to match the
-// endpoint's naming convention (e.g. "claude-opus-4.8" → "anthropic/claude-opus-4.8"
-// for OpenRouter).
 export const PROVIDER_BASE_URLS = {
   anthropic: [
     { label: "OpenRouter",     baseUrl: "https://openrouter.ai/api/v1",                          modelPrefix: "anthropic/", note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
-    { label: "Anthropic Direct", baseUrl: "https://api.anthropic.com/v1",                        modelPrefix: "",            note: "Official Anthropic endpoint. Needs a CORS proxy for browser use. Get a key at console.anthropic.com." },
+    { label: "Anthropic Direct", baseUrl: "https://api.anthropic.com/v1",                        modelPrefix: "",            note: "Official Anthropic endpoint. Routed through server proxy. Get a key at console.anthropic.com." },
   ],
   openai: [
-    { label: "OpenAI Direct",   baseUrl: "https://api.openai.com/v1",                            modelPrefix: "",            note: "Official OpenAI endpoint. May need a CORS proxy for browser use. Get a key at platform.openai.com." },
+    { label: "OpenAI Direct",   baseUrl: "https://api.openai.com/v1",                            modelPrefix: "",            note: "Official OpenAI endpoint. Routed through server proxy. Get a key at platform.openai.com." },
     { label: "OpenRouter",      baseUrl: "https://openrouter.ai/api/v1",                         modelPrefix: "openai/",     note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
   ],
   google: [
@@ -295,14 +293,11 @@ export const PROVIDER_BASE_URLS = {
     { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                              modelPrefix: "google/",  note: "CORS-friendly proxy. Get a key at openrouter.ai/keys." },
   ],
   deepseek: [
-    { label: "DeepSeek Direct",  baseUrl: "https://api.deepseek.com",                                  modelPrefix: "",          note: "Official DeepSeek endpoint. May need a CORS proxy for browser use. Get a key at platform.deepseek.com/api_keys." },
-    { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                             modelPrefix: "deepseek/", note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
+    { label: "DeepSeek Direct",  baseUrl: "https://api.deepseek.com",                                  modelPrefix: "",          note: "Official DeepSeek endpoint. Routed through server proxy (CORS-safe). Get a key at platform.deepseek.com/api_keys." },
+    { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                             modelPrefix: "deepseek/", note: "CORS-friendly proxy. Works from the browser directly. Get a key at openrouter.ai/keys." },
   ],
 };
 
-// ─── Hidden models (user preference) ───────────────────────────────────
-// Users can hide models they don't use so the input picker stays clean.
-// Hidden models are stored locally and filtered out of the ModelSelector.
 const HIDDEN_MODELS_STORAGE = "ttt_builder_hidden_models";
 
 export function getHiddenModels() {
@@ -340,8 +335,6 @@ export function setHostedModelName(id, name) {
   const all = _getHostedKeys(); all[id] = { ...(all[id] || {}), model: name }; _saveHostedKeys(all);
 }
 
-// Resolve a hosted model ID to a provider object for callLocalLlm.
-// Returns null when no key is set (caller falls back to Base44 InvokeLLM).
 export function resolveHostedModel(modelId) {
   const reg = HOSTED_MODEL_REGISTRY[modelId];
   if (!reg) return null;
