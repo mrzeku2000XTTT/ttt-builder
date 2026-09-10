@@ -89,6 +89,42 @@ export function getEnvProviders() {
       _env: true,
     });
   }
+  const xaiKey = (env.VITE_XAI_API_KEY || "").trim();
+  if (xaiKey) {
+    out.push({
+      id: "env_xai",
+      provider: "xai",
+      label: "xAI Grok (.env)",
+      model: (env.VITE_XAI_MODEL || "grok-4").trim(),
+      baseUrl: "https://api.x.ai/v1",
+      apiKey: xaiKey,
+      _env: true,
+    });
+  }
+  const groqKey = (env.VITE_GROQ_API_KEY || "").trim();
+  if (groqKey) {
+    out.push({
+      id: "env_groq",
+      provider: "groq",
+      label: "Groq (.env)",
+      model: "llama-3.3-70b-versatile",
+      baseUrl: "https://api.groq.com/openai/v1",
+      apiKey: groqKey,
+      _env: true,
+    });
+  }
+  const orKey = (env.VITE_OPENROUTER_API_KEY || "").trim();
+  if (orKey) {
+    out.push({
+      id: "env_openrouter",
+      provider: "openrouter",
+      label: "OpenRouter (.env)",
+      model: (env.VITE_OPENROUTER_MODEL || "deepseek/deepseek-chat-v3.1:free").trim(),
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: orKey,
+      _env: true,
+    });
+  }
   const llmKey = (env.VITE_LLM_API_KEY || "").trim();
   if (llmKey) {
     out.push({
@@ -177,30 +213,55 @@ export async function callLocalLlm(args) {
   if (systemContent) messages.push({ role: "system", content: systemContent });
   messages.push({ role: "user", content: parts });
 
-  // Route through the backend proxy when the provider blocks browser CORS
-  // (DeepSeek, OpenAI direct, Anthropic direct, most Chinese providers).
-  // CORS-friendly providers (Groq, Google, OpenRouter, Ollama) call directly.
+  // CORS-blocked providers go through same-origin /api/llm (Vercel + Vite).
+  // Standalone has no Base44 proxyLlmCall — that path is dead here.
   let text;
-  if (needsProxy) {
-    const { base44 } = await import("@/api/base44Client");
-    const proxyRes = await base44.functions.invoke("proxyLlmCall", {
-      baseUrl,
-      model: provider.model,
-      messages,
-      apiKey: provider.apiKey,
-      temperature: 0.3,
-      maxTokens: 8192,
-      jsonSchema: jsonSchema || null,
-    });
-    const pd = proxyRes?.data || proxyRes || {};
-    if (pd.error) throw new Error(`${provider.label} (proxy): ${pd.error}`);
-    text = pd.content;
+  const TIMEOUT_MS = 120000;
+  if (needsProxy && !(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    let res;
+    try {
+      res = await fetch("/api/llm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          baseUrl,
+          apiKey: provider.apiKey,
+          model: provider.model,
+          messages,
+          temperature: 0.3,
+          max_tokens: 16384,
+          jsonMode: !!jsonSchema,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s.`);
+      }
+      throw new Error(`Could not reach ${provider.label} via /api/llm. ${err.message || "network error"}. Deploy this site (Vercel) or run npm run dev so the CORS proxy is available.`);
+    } finally {
+      clearTimeout(timer);
+    }
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    if (res.status === 404 || ct.includes("text/html")) {
+      throw new Error(`${provider.label} needs the /api/llm CORS proxy. Run npm run dev locally or deploy to Vercel.`);
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`${provider.label} error ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    if (data?.error) throw new Error(`${provider.label} (proxy): ${data.error}`);
+    const out = data?.choices?.[0]?.message?.content ?? data?.content;
+    text = Array.isArray(out) ? out.map((p) => p.text || "").join("") : out;
     if (text == null) throw new Error(`${provider.label} (proxy) returned no content`);
   } else {
     const headers = { "Content-Type": "application/json" };
     if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
     if (provider.provider === "openrouter") {
-      headers["HTTP-Referer"] = "https://ttt.builder";
+      headers["HTTP-Referer"] = typeof window !== "undefined" ? window.location.origin : "https://ttt-builder.vercel.app";
       headers["X-Title"] = "TTT Builder";
     }
 
@@ -217,7 +278,7 @@ export async function callLocalLlm(args) {
           model: provider.model,
           messages,
           temperature: 0.3,
-          max_tokens: 8192,
+          max_tokens: 16384,
         }),
         signal: controller.signal,
       });
@@ -277,6 +338,8 @@ export const HOSTED_MODEL_REGISTRY = {
   "gemini_3_flash":    { label: "Gemini 3 Flash",   provider: "google",    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3-flash" },
   "deepseek_v4_pro":   { label: "DeepSeek V4 Pro",  provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-pro" },
   "deepseek_v4_flash": { label: "DeepSeek V4 Flash", provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-flash" },
+  "grok_4":            { label: "Grok 4",           provider: "xai",      baseUrl: "https://api.x.ai/v1",                                      model: "grok-4" },
+  "grok_3":            { label: "Grok 3",           provider: "xai",      baseUrl: "https://api.x.ai/v1",                                      model: "grok-3" },
 };
 
 export const PROVIDER_BASE_URLS = {
@@ -295,6 +358,10 @@ export const PROVIDER_BASE_URLS = {
   deepseek: [
     { label: "DeepSeek Direct",  baseUrl: "https://api.deepseek.com",                                  modelPrefix: "",          note: "Official DeepSeek endpoint. Routed through server proxy (CORS-safe). Get a key at platform.deepseek.com/api_keys." },
     { label: "OpenRouter",       baseUrl: "https://openrouter.ai/api/v1",                             modelPrefix: "deepseek/", note: "CORS-friendly proxy. Works from the browser directly. Get a key at openrouter.ai/keys." },
+  ],
+  xai: [
+    { label: "xAI Direct",  baseUrl: "https://api.x.ai/v1",                 modelPrefix: "",     note: "Official xAI endpoint. Uses /api/llm CORS proxy in this build. Get a key at console.x.ai." },
+    { label: "OpenRouter",  baseUrl: "https://openrouter.ai/api/v1",        modelPrefix: "x-ai/", note: "CORS-friendly proxy. Works from the browser. Get a key at openrouter.ai/keys." },
   ],
 };
 
@@ -348,4 +415,17 @@ export function resolveHostedModel(modelId) {
     baseUrl: getHostedModelBaseUrl(modelId) || reg.baseUrl,
     apiKey: key,
   };
+}
+
+/** Pick a model the standalone build can actually call (BYO key / .env). */
+export function resolveBuildModel(modelId) {
+  const id = String(modelId || "");
+  if (isLocalModelId(id) && resolveLocalModel(id)) return id;
+  if (resolveHostedModel(id)) return id;
+  const providers = getAllProviders();
+  if (providers.length) return LOCAL_MODEL_PREFIX + providers[0].id;
+  for (const hid of Object.keys(HOSTED_MODEL_REGISTRY)) {
+    if ((getHostedModelKey(hid) || "").trim()) return hid;
+  }
+  return null;
 }

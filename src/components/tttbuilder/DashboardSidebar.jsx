@@ -19,8 +19,8 @@ export default function DashboardSidebar({ active, onChange, fileCount = 0 }) {
       {/* Header */}
       <div className="px-4 py-4 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#70C7BA] to-[#5a9d92] flex items-center justify-center">
-            <span className="text-black font-black text-xs">D</span>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#d4a017] to-[#8a6a10] flex items-center justify-center">
+            <span className="text-[#1a1408] font-black text-xs">D</span>
           </div>
           <span className="font-semibold text-sm text-white/90 tracking-tight">Dashboard</span>
           {active !== "overview" && (
@@ -49,7 +49,7 @@ export default function DashboardSidebar({ active, onChange, fileCount = 0 }) {
                   : "text-white/50 hover:text-white/80 hover:bg-white/[0.03]"
               }`}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#70C7BA]" : ""}`} />
+              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#d4a017]" : ""}`} />
               <span className="flex-1 text-left">{item.label}</span>
               {item.id === "code" && fileCount > 0 && (
                 <span className="text-[10px] text-white/30 font-bold">{fileCount}</span>

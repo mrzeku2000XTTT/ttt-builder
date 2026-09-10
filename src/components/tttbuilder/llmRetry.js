@@ -3,9 +3,10 @@
 // drop, timeout, abort) — genuine model/logic errors still throw immediately.
 
 import { base44 } from "@/api/base44Client";
-import { isLocalModelId, callLocalLlm, resolveHostedModel } from "./localLlm";
+import { isLocalModelId, callLocalLlm, resolveHostedModel, resolveBuildModel } from "./localLlm";
 
 const TRANSIENT = /network|failed to fetch|timeout|timed out|aborted|err_network|econnreset|socket hang up|load failed|networkerror|network request failed/;
+const NO_KEY = "No model key configured. Open Settings → Setup wizard and add an OpenRouter, Groq, Gemini, DeepSeek, or xAI key. Keys stay in this browser.";
 
 export function isTransientError(err) {
   const m = String(err?.message || err || "").toLowerCase();
@@ -28,6 +29,17 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   if (hostedProvider) {
     return callLocalLlm({ ...args, _resolvedProvider: hostedProvider });
   }
+
+  // Standalone never has Base44 InvokeLLM. Map TTT Agent 1 / automatic onto the
+  // first configured BYO key instead of throwing a dead-platform error.
+  if (base44.__standalone) {
+    const fallback = resolveBuildModel(args.model);
+    if (fallback && fallback !== args.model) {
+      return invokeLLMWithRetry({ ...args, model: fallback }, opts);
+    }
+    throw new Error(NO_KEY);
+  }
+
   // Base44 InvokeLLM has no separate system role — fold it into the prompt so
   // hosted/keyless models still get the TTT Agent skills in their context.
   const { system, ...rest } = args;

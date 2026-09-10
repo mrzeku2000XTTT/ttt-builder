@@ -73,6 +73,14 @@ export const KASPA_TEMPLATES = [
     prompt: "Build a Kaspa staking and rewards UI: total staked hero with APR, lock-amount form with duration slider, active positions list with unlock countdowns, rewards claim card, and a rewards-over-time chart. Dark, premium, teal-to-cyan gradients.",
   },
   {
+    id: "agents",
+    name: "Agent Desk",
+    tag: "Agents",
+    emoji: "🤖",
+    blurb: "Planner, researcher, executor",
+    prompt: "Build an agentic app: a visible multi-agent workflow desk. Three agents as separate modules under scripts/agents/ — planner.js (turns a user goal into a task list), researcher.js (fetches live data with fetch() to public APIs), executor.js (runs the plan and writes results). Shared message bus in localStorage. UI: a dark gold/black workflow panel that shows each agent (idle/running/done), latest output, and a Run workflow button. Persist the last run. If an agent needs an LLM, show an Add API key field (localStorage ttt_app_llm_key) and POST to an OpenAI-compatible chat/completions URL — never hardcode a vendor key. Include the TTT Kaspa wallet kit in the header.",
+  },
+  {
     id: "community",
     name: "Community Hub",
     tag: "Social",

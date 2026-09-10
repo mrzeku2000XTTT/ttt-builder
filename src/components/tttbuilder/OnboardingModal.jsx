@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, KeyRound, Server, CheckCircle, Sparkles, ArrowRight, Github, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getLocalProviders, saveLocalProvider, PROVIDER_PRESETS, LOCAL_MODEL_PREFIX } from "./localLlm";
+import { getLocalProviders, getEnvProviders, saveLocalProvider, PROVIDER_PRESETS, LOCAL_MODEL_PREFIX } from "./localLlm";
 
 const E2B_KEY_STORAGE = "ttt_builder_e2b_key";
 const ONBOARDING_DONE = "ttt_builder_onboarded";
@@ -34,7 +34,7 @@ export function isOnboarded() {
 function needsOnboarding() {
   if (!isStandalone()) return false;
   if (isOnboarded()) return false;
-  return getLocalProviders().length === 0;
+  return getLocalProviders().length === 0 && getEnvProviders().length === 0;
 }
 
 /**
@@ -71,6 +71,7 @@ export default function OnboardingModal() {
     if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral")) return "groq";
     if (s.includes("/")) return "openrouter";
     if (s.startsWith("deepseek")) return "deepseek";
+    if (s.startsWith("grok") || s.startsWith("xai")) return "xai";
     if (s.startsWith("mistral") || s.startsWith("codestral")) return "mistral";
     return "google"; // default to Google Gemini (free + CORS-friendly)
   };
@@ -92,6 +93,7 @@ export default function OnboardingModal() {
     });
     // Make this the active model so the selector defaults to it, not a hosted model.
     try { localStorage.setItem("ttt_builder_model", `${LOCAL_MODEL_PREFIX}${entry.id}`); } catch {}
+    window.dispatchEvent(new CustomEvent("ttt-model-added", { detail: entry }));
     setStep(1);
   };
 

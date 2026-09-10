@@ -30,7 +30,7 @@ export const base44 = {
     Core: {
       GenerateImage: unavailable("GenerateImage", "Plug your own image API into src/components/tttbuilder/imageGen.js, or TTT_IMAGE markers are cleared."),
       UploadFile: unavailable("UploadFile"),
-      InvokeLLM: unavailable("InvokeLLM", "Add an open model in the Open Models tab — hosted models need the Base44 platform."),
+      InvokeLLM: unavailable("InvokeLLM", "Add a model key in Settings (OpenRouter, Groq, Gemini, DeepSeek, or xAI). Keys stay in this browser."),
       GenerateSpeech: unavailable("GenerateSpeech"),
       GenerateVideo: unavailable("GenerateVideo"),
       TranscribeAudio: unavailable("TranscribeAudio"),

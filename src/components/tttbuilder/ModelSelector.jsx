@@ -18,6 +18,8 @@ export const BUILDER_MODELS = [
   { id: "gpt_5_mini", label: "GPT-5 Mini (fast)" },
   { id: "deepseek_v4_pro", label: "DeepSeek V4 Pro" },
   { id: "deepseek_v4_flash", label: "DeepSeek V4 Flash" },
+  { id: "grok_4", label: "Grok 4" },
+  { id: "grok_3", label: "Grok 3" },
 ];
 
 const ADD_VALUE = "__add_local__";
@@ -73,9 +75,15 @@ export default function ModelSelector({ value, onChange, disabled, variant = "da
               ))}
             </optgroup>
           )}
-          {standalone && local.length === 0 && (
-            <option value="" disabled className="bg-[#161b22] text-white/50">No model — add one in Settings</option>
+          {standalone && (
+            <optgroup label="Studio">
+              <option value="ttt_agent_1" className="bg-[#161b22] text-white">TTT Agent 1 (orchestrated)</option>
+            </optgroup>
           )}
+          {standalone && local.length === 0 && (
+            <option value="ttt_agent_1" disabled className="bg-[#161b22] text-white/50">Add a key in Settings</option>
+          )}
+
           {local.length > 0 && (
             <optgroup label={standalone ? "Open / Local" : "Open / Local"}>
               {local.map((p) => (

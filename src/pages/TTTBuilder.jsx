@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate } from "react-router-dom";
+
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
 import FileEditor from "@/components/tttbuilder/FileEditor";
 import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
@@ -39,7 +39,7 @@ import AnchorsPanel from "@/components/tttbuilder/AnchorsPanel";
 import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal";
 import OnboardingModal, { isStandalone } from "@/components/tttbuilder/OnboardingModal";
-import { getLocalProviders, LOCAL_MODEL_PREFIX, isLocalModelId } from "@/components/tttbuilder/localLlm";
+import { getAllProviders, LOCAL_MODEL_PREFIX, isLocalModelId, resolveBuildModel } from "@/components/tttbuilder/localLlm";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 const STANDALONE = isStandalone();
@@ -108,6 +108,8 @@ AGENTIC APPS — when the user asks for "an agentic app", "AI agents", "a workfl
 - Agents communicate through a shared message bus / event emitter or a simple queue in localStorage. Each agent runs its step, posts its result, and triggers the next.
 - Give the user a visible workflow UI: a panel that shows each agent, its current status (idle / running / done), its latest output, and a "Run workflow" button. Show the step-by-step progress as it happens.
 - Use window.TTTWallet or fetch() to public APIs as agent tools. An agent that "researches" should fetch real data; an agent that "plans" should produce a real task list; an agent that "executes" should call the tools and show results.
+- If an agent needs an LLM, read a key from a Settings field (persist as localStorage ttt_app_llm_key) and POST to an OpenAI-compatible /chat/completions URL the user provides. Never hardcode a vendor key. Show an "Add API key" input in the workflow UI when no key is set.
+- Agents must have distinct roles and visible handoffs. Do not collapse a multi-agent request into a single fake "AI" button.
 - The workflow must be deterministic and replayable: the user can run it again and see fresh results. Persist the last run in localStorage so it survives refreshes.
 
 ADDITIVE AGENT INSTALL — when the user asks to "add an agent", "add AI", or "add a workflow" to a project that ALREADY HAS FILES:
@@ -118,7 +120,6 @@ ADDITIVE AGENT INSTALL — when the user asks to "add an agent", "add AI", or "a
 - Return ONLY: the new agent files + the one or two existing files you surgically edited to mount them. Never return the whole project.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
-const TTT_AGENT_1 = "claude_opus_4_8";
 const AGENT_1_DIRECTIVE = `
 
 YOU ARE TTT AGENT 1 — the highest tier build agent. Work at the level of a staff engineer shipping production software:
@@ -144,10 +145,10 @@ MULTIPLAYER APPS - when the user asks for "multiplayer", "play with friends", "o
 
 const EXAMPLES = [
   "Kaspa staking dashboard with live price ticker and animated stats",
+  "Multi-agent research app: planner, researcher, and executor with a live workflow panel",
   "NFT marketplace with gallery, filters, and wallet connect UI",
   "DeFi protocol app with TVL counter, swap interface, and charts",
   "Crypto portfolio tracker with holdings table and pie chart",
-  "Web3 developer portfolio with project cards and contact form",
 ];
 
 const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer working in a REAL multi-file project.
@@ -232,7 +233,7 @@ export default function TTTBuilderPage() {
   }, []);
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#70C7BA]/40 border-t-[#70C7BA] rounded-full animate-spin" /></div>;
+    return <div className="min-h-screen bg-[#0b0b0c] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#d4a017]/40 border-t-[#d4a017] rounded-full animate-spin" /></div>;
   }
 
   if (!user || user.role !== "admin") {
@@ -253,7 +254,6 @@ export default function TTTBuilderPage() {
 }
 
 function TTTBuilderStudio() {
-  const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [topTab, setTopTab] = useState("preview"); // "preview" | "dashboard"
@@ -274,15 +274,12 @@ function TTTBuilderStudio() {
   const [model, setModel] = useState(() => {
     try {
       const saved = localStorage.getItem("ttt_builder_model");
-      // Standalone builds have no hosted models — if the saved model is a hosted
-      // one (or none exists), default to the user's first local/open model instead.
       if (STANDALONE) {
-        const locals = getLocalProviders();
-        if (locals.length > 0) {
-          if (!saved || (!isLocalModelId(saved) && saved !== "automatic")) {
-            return `${LOCAL_MODEL_PREFIX}${locals[0].id}`;
-          }
-        }
+        if (saved === "ttt_agent_1" || saved === "automatic") return saved;
+        if (saved && isLocalModelId(saved)) return saved;
+        const locals = getAllProviders();
+        if (locals.length > 0) return `${LOCAL_MODEL_PREFIX}${locals[0].id}`;
+        return "ttt_agent_1";
       }
       return saved || "ttt_agent_1";
     } catch { return "ttt_agent_1"; }
@@ -310,6 +307,19 @@ function TTTBuilderStudio() {
     setModel(m);
     try { localStorage.setItem("ttt_builder_model", m); } catch {}
   };
+
+  const openSettings = () => {
+    window.dispatchEvent(new Event("ttt-open-onboarding"));
+  };
+
+  useEffect(() => {
+    const onAdded = (e) => {
+      const id = e?.detail?.id;
+      if (id) changeModel(`${LOCAL_MODEL_PREFIX}${id}`);
+    };
+    window.addEventListener("ttt-model-added", onAdded);
+    return () => window.removeEventListener("ttt-model-added", onAdded);
+  }, []);
   const [attachments, setAttachments] = useState([]);
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
   const [liveUrl, setLiveUrl] = useState(null); // real running URL from the E2B sandbox (npm projects)
@@ -461,9 +471,12 @@ function TTTBuilderStudio() {
         ? `Current project files:\n${files.filter(f => wantsWallet || !f.path.includes("kaspa-wallet.js")).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 6000)}`).join("\n\n")}`
         : "";
 
-      const isAgent1 = model === "ttt_agent_1";
-      // "ttt_agent_1" is a UI alias — resolve it to the real model id before any LLM call.
-      const llmModel = isAgent1 ? TTT_AGENT_1 : model;
+      const isAgent1 = model === "ttt_agent_1" || model === "automatic";
+      // "ttt_agent_1" is a UI alias. Standalone has no Base44 — resolve to a BYO key.
+      const llmModel = resolveBuildModel(model);
+      if (!llmModel) {
+        throw new Error("No model key configured. Open Settings and add an OpenRouter, Groq, Gemini, DeepSeek, or xAI key. Keys stay in this browser.");
+      }
       // Context budget: the full system prompt is ~32K chars (~8K tokens). Local
       // models (qwen 32K ctx) struggle when wallet/kaspa/argent rules bloat the
       // prompt for a simple landing page. Only include the heavy rules when the
@@ -530,7 +543,7 @@ function TTTBuilderStudio() {
           userPrompt,
           history,
           files,
-          model: TTT_AGENT_1,
+          model: llmModel,
           fileUrls,
           attachmentNote,
           onProgress: (ev) => {
@@ -729,54 +742,59 @@ function TTTBuilderStudio() {
   };
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#f5f2ed] text-[#1a1614]" : "bg-[#0d1117] text-white"}`}>
+    <div className="min-h-screen overflow-x-hidden bg-[#0b0b0c] text-[#f4ead8]">
 
       {/* Top nav */}
       <nav
-        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b transition-colors ${phase === "hero" ? "bg-[#f5f2ed]/80 border-[#e0dcd7]" : "bg-[#0d1117]/80 border-white/5"}`}
+        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b bg-[#0b0b0c]/85 border-[#d4a017]/15"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate("/AppStoreV2")}
-            className={`flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-black/5 ${phase === "hero" ? "text-[#8a8580] hover:text-[#1a1614]" : "text-white/60 hover:text-white"}`}
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm font-medium">Back</span>
-          </button>
-          <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-[#1a1614]" : "text-white"}`}>TTT</span>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-[#1a1614] text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
+          {phase === "studio" ? (
+            <button
+              onClick={() => setPhase("hero")}
+              className="flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg text-[#9a9080] hover:text-[#f4ead8] active:bg-white/5"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Home</span>
+            </button>
+          ) : (
+            <div className="w-2" />
+          )}
+          <span className="font-black text-lg tracking-tight text-[#f4ead8]">TTT</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#d4a017] text-[#1a1408]">BUILDER</span>
         </div>
-        <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
-          <span>Built on Kaspa</span>
+        <div className="hidden sm:flex items-center gap-4 text-xs text-[#9a9080]">
+          <span>Kaspa-native · BYO keys</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowProjects(true)}
-            className={`flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className="flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition-colors bg-white/5 border-[#d4a017]/20 text-[#d4c4a0] hover:bg-[#d4a017]/10 hover:text-[#f4ead8]"
             title="Saved projects"
           >
             <FolderOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Projects</span>
           </button>
           <button
-            onClick={() => navigate('/BuilderSettings')}
-            className={`flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            onClick={openSettings}
+            className="flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full border text-xs font-bold transition-colors bg-white/5 border-[#d4a017]/20 text-[#d4c4a0] hover:bg-[#d4a017]/10 hover:text-[#f4ead8]"
             title="Builder settings"
           >
             <Settings className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Settings</span>
           </button>
           <button
             onClick={() => setShowCloneModal(true)}
-            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors flex-shrink-0 ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className="flex items-center justify-center h-8 w-8 rounded-full border transition-colors flex-shrink-0 bg-[#d4a017] border-[#d4a017] text-[#1a1408] hover:bg-[#e0b122]"
             title="Clone TTT Builder repo"
           >
             <Github className="w-4 h-4" />
           </button>
         </div>
+
         {html && (
           <button
             onClick={downloadHtml}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#d4a017]/20 border border-[#d4a017]/40 text-[#d4a017] text-xs font-bold hover:bg-[#d4a017]/30 transition-colors"
           >
             <ExternalLink className="w-3 h-3" /> Export HTML
           </button>
@@ -790,19 +808,20 @@ function TTTBuilderStudio() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-5 bg-[#f5f2ed]"
+            className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-5 bg-[#0b0b0c]"
             style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
           >
             <div className="relative max-w-3xl mx-auto text-center w-full">
+              <div className="pointer-events-none absolute left-1/2 top-8 -translate-x-1/2 w-[28rem] h-[28rem] rounded-full bg-[#d4a017]/10 blur-3xl" />
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e8e4df] text-[#5a554f] text-xs font-medium mb-6 sm:mb-10"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#d4a017]/10 border border-[#d4a017]/25 text-[#d4a017] text-xs font-medium mb-6 sm:mb-10"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#8a8076]" />
-                AI Site Builder for Kaspa
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d4a017]" />
+                Kaspa-native AI studio
               </motion.div>
 
               {/* Headline */}
@@ -810,21 +829,21 @@ function TTTBuilderStudio() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-4xl sm:text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-4 sm:mb-5 text-[#1a1614] font-heading"
+                className="text-4xl sm:text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-4 sm:mb-5 text-[#f4ead8] font-heading"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Build your site.
+                Describe it.
                 <br />
-                <span className="text-[#a8a29a]">Ship it now.</span>
+                <span className="text-[#d4a017]">Ship the app.</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-[#6a655f] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-12 font-normal px-2"
+                className="text-[#9a9080] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-12 font-normal px-2"
               >
-                Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
+                Multi-file builds, agentic workflows, and a Kaspa wallet kit — with your own model keys. No hosted lock-in.
               </motion.p>
 
               {/* Main input */}
@@ -834,14 +853,14 @@ function TTTBuilderStudio() {
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex flex-wrap items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
-                  <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
+                <div className="flex flex-wrap items-center gap-2 bg-[#141210] border border-[#d4a017]/25 focus-within:border-[#d4a017]/60 focus-within:shadow-[0_0_0_4px_rgba(212,160,23,0.12)] rounded-2xl p-2 transition-all">
+                  <ModelSelector variant="dark" value={model} onChange={changeModel} disabled={loading} onOpenSettings={openSettings} />
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
-                    placeholder={chatMode === "plan" ? "Tell the builder your idea…" : "Describe your app — e.g. 'Kaspa staking dashboard'"}
-                    className="flex-1 min-w-0 w-full sm:w-auto bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3 order-3 sm:order-none"
+                    placeholder={chatMode === "plan" ? "Tell the builder your idea…" : "Describe your app — e.g. 'agentic Kaspa research desk'"}
+                    className="flex-1 min-w-0 w-full sm:w-auto bg-transparent outline-none text-[#f4ead8] placeholder:text-[#6a6258] text-sm px-3 py-3 order-3 sm:order-none"
                   />
                   {/* Plan mode toggle — talk through the idea before building */}
                   <button
@@ -851,18 +870,17 @@ function TTTBuilderStudio() {
                     title="Plan mode — talk through your idea before building"
                     className={`flex items-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex-shrink-0 ${
                       chatMode === "plan"
-                        ? "bg-[#1a1614] text-white"
-                        : "bg-[#f5f2ed] text-[#5a554f] hover:bg-[#ece9e4] border border-[#e0dcd7]"
+                        ? "bg-[#d4a017] text-[#1a1408]"
+                        : "bg-white/5 text-[#9a9080] hover:bg-white/10 border border-[#d4a017]/20"
                     }`}
                   >
                     <ClipboardList className="w-3.5 h-3.5" />
                     <span>Plan</span>
                   </button>
-                  {/* Build orb — white background, icon only */}
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-white border border-[#e0dcd7] text-[#1a1614] hover:bg-[#f5f2ed] disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
+                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#d4a017] border border-[#d4a017] text-[#1a1408] hover:bg-[#e0b122] disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
                     title={chatMode === "plan" ? "Send plan" : "Build"}
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -879,8 +897,8 @@ function TTTBuilderStudio() {
                   className="mt-3 flex items-center justify-center gap-2"
                 >
                   <button
-                    onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
-                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
+                    onClick={openSettings}
+                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-[#d4a017]/15 border border-[#d4a017]/40 text-[#d4a017] text-xs font-bold hover:bg-[#d4a017]/25 transition-colors"
                   >
                     <KeyRound className="w-3.5 h-3.5" /> Setup wizard
                   </button>
@@ -898,7 +916,7 @@ function TTTBuilderStudio() {
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="text-xs text-[#8a8580] hover:text-[#1a1614] transition-colors"
+                    className="text-xs text-[#6a6258] hover:text-[#d4a017] transition-colors"
                   >
                     {ex.slice(0, 38)}…
                   </button>
