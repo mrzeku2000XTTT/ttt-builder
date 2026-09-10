@@ -77,7 +77,7 @@ export default function LandingPage({
               agentic applications.
             </h1>
             <p className="mt-5 text-[#5a6b64] text-[15px] sm:text-base max-w-md leading-relaxed">
-              Use natural language. Ship real apps. Agentic workflows, DeFi, payments, and more — all on Kaspa Layer 1.
+              Use natural language. Ship real apps. Every onchain command is a Kaspa Layer 1 transaction — network fee only, typically under a cent. No gas token. No platform cut.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <button
@@ -104,7 +104,7 @@ export default function LandingPage({
             <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl">
               {[
                 ["L1 Speed", "1 Sec", "Block Time"],
-                ["Low Fees", "< $0.01", "Per Tx"],
+                ["Every command", "Kaspa fee", "Usually < $0.01"],
                 ["Scalable", "∞", "BlockDAG"],
                 ["Full Control", "Your Keys", "BYO & Secure"],
               ].map(([k, v, s]) => (
@@ -117,24 +117,29 @@ export default function LandingPage({
             </div>
           </div>
 
-          <div className="relative">
-            <div className="hidden lg:flex flex-col gap-2 absolute -right-1 top-8 z-10 text-[10px] font-bold tracking-[0.16em] text-[#7a8a83] text-right">
-              {["AGENTS", "PAYMENTS", "DEFI", "NFTs", "SOCIAL", "ONCHAIN"].map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-            </div>
-            <div className="relative rounded-[28px] overflow-hidden bg-white">
-              <img src="/landing/hero.jpg" alt="" className="w-full h-auto object-cover" />
-              <div className="absolute top-5 right-5 w-12 h-12 rounded-full bg-[#7CFF9A] text-[#062014] flex items-center justify-center shadow-lg">
+          <div className="relative flex items-start gap-3">
+            <div className="relative flex-1 min-w-0 rounded-[28px] overflow-hidden bg-[#f4f6f3]">
+              <img src="/landing/hero.jpg" alt="" className="w-full h-auto object-cover select-none" />
+              <button
+                type="button"
+                onClick={onStart}
+                aria-label="Start vibe coding"
+                className="absolute top-4 right-4 w-11 h-11 rounded-full bg-[#7CFF9A] text-[#062014] flex items-center justify-center shadow-[0_8px_24px_rgba(16,35,28,0.18)] hover:bg-[#6af08b]"
+              >
                 <ArrowUpRight className="w-5 h-5" strokeWidth={2.5} />
-              </div>
-              <div className="absolute left-5 bottom-24 rounded-xl bg-black/80 text-[#7CFF9A] font-mono text-[11px] px-3 py-2 leading-5">
+              </button>
+              <div className="absolute left-4 bottom-[4.5rem] rounded-xl bg-[#10231c]/90 text-[#7CFF9A] font-mono text-[11px] px-3 py-2 leading-5 pointer-events-none">
                 {">"} build()<br />{">"} deploy()<br />{">"} earn()_
               </div>
-              <div className="absolute left-5 bottom-5 rounded-lg bg-white/90 backdrop-blur px-3 py-2 text-[10px] font-bold tracking-[0.14em]">
+              <div className="absolute left-4 bottom-4 rounded-lg bg-white px-3 py-2 text-[10px] font-bold tracking-[0.14em] shadow-sm pointer-events-none">
                 KASPA L1
                 <div className="text-[9px] font-semibold tracking-wide text-[#5a6b64] mt-0.5">FAST. FAIR. SECURE.</div>
               </div>
+            </div>
+            <div className="hidden lg:flex flex-col gap-3 pt-16 shrink-0 w-[5.5rem] text-[10px] font-bold tracking-[0.16em] text-[#7a8a83] text-right leading-none">
+              {["AGENTS", "PAYMENTS", "DEFI", "NFTs", "SOCIAL", "ONCHAIN"].map((t) => (
+                <span key={t}>{t}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -148,7 +153,7 @@ export default function LandingPage({
               Build With AI Agents
             </h2>
             <p className="mt-3 text-[#5a6b64] text-sm max-w-sm leading-relaxed">
-              Let AI agents handle the heavy lifting. Create, deploy and scale applications that work, earn and interact on Kaspa Layer 1.
+              Let AI agents handle the heavy lifting. Each onchain command they run is a Kaspa transaction — you pay the network fee, nothing else.
             </p>
             <button
               onClick={onStart}
@@ -220,7 +225,7 @@ export default function LandingPage({
               <span className="text-[#7CFF9A]">A full economic layer.</span>
             </h3>
             <p className="mt-3 text-sm text-white/75 leading-relaxed">
-              From DeFi to AI agents, NFTs to real-world apps — Kaspa Layer 1 powers an open, fast and fair economy built by builders, for builders.
+              From DeFi to AI agents, NFTs to real-world apps — every command settles as a Kaspa transaction. Network fee only. Built by builders, for builders.
             </p>
             <button
               onClick={onStart}
@@ -241,7 +246,7 @@ export default function LandingPage({
         <div className="flex flex-wrap items-center gap-5 text-[11px] text-[#5a6b64]">
           <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Open Source</span>
           <span className="inline-flex items-center gap-1.5"><KeyRound className="w-3.5 h-3.5" /> BYO Keys</span>
-          <span>Kaspa L1 · Fast · Fair · Secure</span>
+          <span>Kaspa L1 · Network fee per command</span>
         </div>
         <button
           onClick={onOpenSettings}

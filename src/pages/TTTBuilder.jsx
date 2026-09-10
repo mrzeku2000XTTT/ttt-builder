@@ -109,6 +109,7 @@ AGENTIC APPS — when the user asks for "an agentic app", "AI agents", "a workfl
 - Agents communicate through a shared message bus / event emitter or a simple queue in localStorage. Each agent runs its step, posts its result, and triggers the next.
 - Give the user a visible workflow UI: a panel that shows each agent, its current status (idle / running / done), its latest output, and a "Run workflow" button. Show the step-by-step progress as it happens.
 - Use window.TTTWallet or fetch() to public APIs as agent tools. An agent that "researches" should fetch real data; an agent that "plans" should produce a real task list; an agent that "executes" should call the tools and show results.
+- EVERY onchain command (send, tip, mint, swap, anchor, pay) is a real Kaspa L1 transaction. The only fee is the native Kaspa network fee in sompi — typically well under $0.01. Never show Ethereum gas, never invent a platform fee, never add a builder cut. Label it "Kaspa network fee" on every command.
 - If an agent needs an LLM, read a key from a Settings field (persist as localStorage ttt_app_llm_key) and POST to an OpenAI-compatible /chat/completions URL the user provides. Never hardcode a vendor key. Show an "Add API key" input in the workflow UI when no key is set.
 - Agents must have distinct roles and visible handoffs. Do not collapse a multi-agent request into a single fake "AI" button.
 - The workflow must be deterministic and replayable: the user can run it again and see fresh results. Persist the last run in localStorage so it survives refreshes.
