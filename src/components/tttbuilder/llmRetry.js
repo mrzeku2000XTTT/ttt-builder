@@ -3,10 +3,10 @@
 // drop, timeout, abort) — genuine model/logic errors still throw immediately.
 
 import { base44 } from "@/api/base44Client";
-import { isLocalModelId, callLocalLlm, resolveHostedModel, resolveBuildModel } from "./localLlm";
+import { isLocalModelId, callLocalLlm, resolveHostedModel, resolveBuildModel, GROK_BUILTIN } from "./localLlm";
 
 const TRANSIENT = /network|failed to fetch|timeout|timed out|aborted|err_network|econnreset|socket hang up|load failed|networkerror|network request failed/;
-const NO_KEY = "No model key configured. Open Settings → Setup wizard and add an OpenRouter, Groq, Gemini, DeepSeek, or xAI key. Keys stay in this browser.";
+const NO_KEY = "Add a Grok key to build. Open Settings → paste your xAI key from console.x.ai. Keys stay in this browser.";
 
 export function isTransientError(err) {
   const m = String(err?.message || err || "").toLowerCase();
@@ -19,7 +19,7 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   // Local / bring-your-own-key models bypass Base44 credits entirely: call the
   // user's own provider directly from the browser. No retry — surface the real
   // error so they can fix their endpoint/key instead of silently re-billing quota.
-  if (isLocalModelId(args.model)) {
+  if (isLocalModelId(args.model) || args.model === GROK_BUILTIN || String(args.model || "").startsWith("grok")) {
     return callLocalLlm(args);
   }
   // Hosted model with a user-provided API key → call the provider directly

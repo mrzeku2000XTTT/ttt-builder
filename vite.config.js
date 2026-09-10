@@ -50,11 +50,12 @@ function llmProxy() {
           return;
         }
         try {
+          const apiKey = body.apiKey || process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY || "";
           const r = await fetch(baseUrl + "/chat/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...(body.apiKey ? { Authorization: "Bearer " + body.apiKey } : {}),
+              ...(apiKey ? { Authorization: "Bearer " + apiKey } : {}),
             },
             body: JSON.stringify({
               model: body.model,

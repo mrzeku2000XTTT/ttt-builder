@@ -95,7 +95,7 @@ export function getEnvProviders() {
       id: "env_xai",
       provider: "xai",
       label: "xAI Grok (.env)",
-      model: (env.VITE_XAI_MODEL || "grok-4").trim(),
+      model: (env.VITE_XAI_MODEL || "grok-4.6").trim(),
       baseUrl: "https://api.x.ai/v1",
       apiKey: xaiKey,
       _env: true,
@@ -183,8 +183,11 @@ export function resolveLocalModel(modelId) {
 // most Chinese providers) are routed through the backend proxyLlmCall function
 // so they actually work without CORS errors.
 export async function callLocalLlm(args) {
-  const provider = args._resolvedProvider || resolveLocalModel(args.model);
-  if (!provider) throw new Error("Open model not found. Add one in Settings → Models & API keys (or set VITE_LLM_API_KEY / VITE_GEMINI_API_KEY in your .env).");
+  const mid = String(args.model || "");
+  const provider = args._resolvedProvider
+    || resolveLocalModel(args.model)
+    || ((mid === GROK_BUILTIN || mid.startsWith("grok") || mid === "ttt_agent_1") ? pickGrokProvider() : null);
+  if (!provider) throw new Error("Open model not found. Add Grok in Settings (console.x.ai) or set VITE_XAI_API_KEY.");
   const baseUrl = (provider.baseUrl || "").replace(/\/$/, "");
   if (!baseUrl) throw new Error(`"${provider.label}" has no base URL. Edit it in Open Models.`);
 
@@ -338,7 +341,7 @@ export const HOSTED_MODEL_REGISTRY = {
   "gemini_3_flash":    { label: "Gemini 3 Flash",   provider: "google",    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3-flash" },
   "deepseek_v4_pro":   { label: "DeepSeek V4 Pro",  provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-pro" },
   "deepseek_v4_flash": { label: "DeepSeek V4 Flash", provider: "deepseek",  baseUrl: "https://api.deepseek.com",                                model: "deepseek-v4-flash" },
-  "grok_4":            { label: "Grok 4",           provider: "xai",      baseUrl: "https://api.x.ai/v1",                                      model: "grok-4" },
+  "grok_4":            { label: "Grok 4.6",         provider: "xai",      baseUrl: "https://api.x.ai/v1",                                      model: "grok-4.6" },
   "grok_3":            { label: "Grok 3",           provider: "xai",      baseUrl: "https://api.x.ai/v1",                                      model: "grok-3" },
 };
 
@@ -417,15 +420,50 @@ export function resolveHostedModel(modelId) {
   };
 }
 
-/** Pick a model the standalone build can actually call (BYO key / .env). */
+export const GROK_BUILTIN = "grok_builtin";
+export const GROK_MODEL = "grok-4.6";
+
+export function pickGrokProvider() {
+  const all = getAllProviders();
+  const grok = all.find((p) => p.provider === "xai" || String(p.model || "").toLowerCase().startsWith("grok"));
+  if (grok) return grok;
+  const hosted = resolveHostedModel("grok_4") || resolveHostedModel("grok_3");
+  if (hosted) return hosted;
+  return {
+    id: GROK_BUILTIN,
+    provider: "xai",
+    label: "Grok 4.6",
+    model: GROK_MODEL,
+    baseUrl: "https://api.x.ai/v1",
+    apiKey: "",
+  };
+}
+
+function rankProvider(p) {
+  const m = String(p.model || "").toLowerCase();
+  const u = String(p.baseUrl || "").toLowerCase();
+  if (p.provider === "xai" || m.startsWith("grok")) return 0;
+  if (p.provider === "openrouter") return 1;
+  if (p.provider === "google" || p.provider === "groq") return 2;
+  if (p.provider === "deepseek") return 3;
+  if (u.includes("localhost") || u.includes("127.0.0.1") || p.provider === "ollama") return 9;
+  return 5;
+}
+
+/** Pick a model the standalone build can actually call. TTT Agent 1 prefers Grok. */
 export function resolveBuildModel(modelId) {
   const id = String(modelId || "");
   if (isLocalModelId(id) && resolveLocalModel(id)) return id;
   if (resolveHostedModel(id)) return id;
-  const providers = getAllProviders();
-  if (providers.length) return LOCAL_MODEL_PREFIX + providers[0].id;
+  if (id === "ttt_agent_1" || id === "automatic" || id === GROK_BUILTIN || id.startsWith("grok")) {
+    const g = pickGrokProvider();
+    if (g.id && g.id !== GROK_BUILTIN) return LOCAL_MODEL_PREFIX + g.id;
+    return GROK_BUILTIN;
+  }
+  const providers = [...getAllProviders()].sort((a, b) => rankProvider(a) - rankProvider(b));
+  if (providers.length && rankProvider(providers[0]) < 9) return LOCAL_MODEL_PREFIX + providers[0].id;
   for (const hid of Object.keys(HOSTED_MODEL_REGISTRY)) {
     if ((getHostedModelKey(hid) || "").trim()) return hid;
   }
-  return null;
+  return GROK_BUILTIN;
 }

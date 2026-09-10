@@ -45,9 +45,9 @@ function needsOnboarding() {
 export default function OnboardingModal() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0); // 0=model, 1=e2b, 2=done
-  const [model, setModel] = useState("gemini-2.0-flash");
+  const [model, setModel] = useState("grok-4.6");
   const [apiKey, setApiKey] = useState("");
-  const [nickname, setNickname] = useState("Gemini Flash (free)");
+  const [nickname, setNickname] = useState("Grok 4.6");
   const [e2bKey, setE2bKey] = useState(() => getE2BKey());
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -73,7 +73,7 @@ export default function OnboardingModal() {
     if (s.startsWith("deepseek")) return "deepseek";
     if (s.startsWith("grok") || s.startsWith("xai")) return "xai";
     if (s.startsWith("mistral") || s.startsWith("codestral")) return "mistral";
-    return "google"; // default to Google Gemini (free + CORS-friendly)
+    return "xai";
   };
 
   const addModel = () => {
@@ -175,7 +175,7 @@ export default function OnboardingModal() {
                         className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                         autoFocus
                       />
-                      <p className="text-[10px] text-white/30 mt-1">Default: <b className="text-[#4285F4]">Google Gemini 2.0 Flash</b> — free tier, works from the browser. Get a key at <b className="text-[#4285F4]">aistudio.google.com/apikey</b>. You can also use <b className="text-[#70C7BA]">Groq</b> (console.groq.com/keys — fast, free) or any OpenAI-compatible provider.</p>
+                      <p className="text-[10px] text-white/30 mt-1">Default: <b className="text-[#7CFF9A]">Grok 4.6</b> via xAI. Get a key at <b className="text-[#7CFF9A]">console.x.ai</b>. You can also add Groq, Gemini, OpenRouter, or Ollama later.</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">Nickname</label>

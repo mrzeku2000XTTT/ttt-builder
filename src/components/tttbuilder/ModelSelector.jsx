@@ -56,15 +56,15 @@ export default function ModelSelector({ value, onChange, disabled, variant = "da
       <label className={`flex items-center gap-1.5 h-8 pl-2 pr-1 rounded-lg transition-colors cursor-pointer ${
         isLight
           ? "bg-transparent border border-transparent text-[#5a554f] hover:text-[#1a1614]"
-          : "bg-white/5 border border-white/10 text-white/60 hover:text-white"
+          : "bg-white border border-black/10 text-[#10231c] hover:border-black/25"
       }`}>
         <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
         <select
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           disabled={disabled}
-          className={`bg-transparent outline-none text-[11px] font-bold cursor-pointer disabled:opacity-40 max-w-[150px] ${
-            isLight ? "text-[#1a1614]" : "text-white/70"
+          className={`bg-transparent outline-none text-[11px] font-bold cursor-pointer disabled:opacity-40 max-w-[170px] ${
+            isLight ? "text-[#1a1614]" : "text-[#10231c]"
           }`}
         >
           {/* Hosted models only exist on the Base44 platform — hidden in standalone */}
@@ -77,7 +77,7 @@ export default function ModelSelector({ value, onChange, disabled, variant = "da
           )}
           {standalone && (
             <optgroup label="Studio">
-              <option value="ttt_agent_1" className="bg-[#161b22] text-white">TTT Agent 1 (orchestrated)</option>
+              <option value="ttt_agent_1" className="bg-[#161b22] text-white">TTT Agent 1 · Grok 4.6</option>
             </optgroup>
           )}
           {standalone && local.length === 0 && (

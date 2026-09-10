@@ -8,8 +8,8 @@ export default function BuilderOrb({ size = 34 }) {
       style={{
         width: size,
         height: size,
-        background: "radial-gradient(circle at 32% 28%, #f6e7b0 0%, #d4a017 48%, #6b4e08 100%)",
-        boxShadow: "0 0 16px rgba(212,160,23,0.45), inset 0 -5px 10px rgba(0,0,0,0.35)",
+        background: "radial-gradient(circle at 32% 28%, #e9ffe8 0%, #7CFF9A 48%, #1aa85a 100%)",
+        boxShadow: "0 0 14px rgba(124,255,154,0.45)",
       }}
     />
   );
