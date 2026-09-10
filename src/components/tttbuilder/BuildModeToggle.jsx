@@ -8,7 +8,7 @@ const MODES = [
 
 export default function BuildModeToggle({ value, onChange, disabled }) {
   return (
-    <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-black/10">
+    <div className="grid grid-cols-2 gap-0.5 w-full bg-[#f4f6f3] rounded-full p-0.5">
       {MODES.map(m => {
         const Icon = m.icon;
         const active = value === m.id;
@@ -19,11 +19,11 @@ export default function BuildModeToggle({ value, onChange, disabled }) {
             title={m.hint}
             disabled={disabled}
             onClick={() => onChange(m.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${
-              active ? "bg-[#7CFF9A] text-[#062014]" : "text-[#5a6b64] hover:text-[#10231c]"
+            className={`flex items-center justify-center gap-1.5 h-8 rounded-full text-[11px] font-semibold transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] disabled:opacity-40 ${
+              active ? "bg-white text-[#10231c] shadow-sm" : "text-[#5a6b64] hover:text-[#10231c]"
             }`}
           >
-            <Icon className="w-3 h-3" /> {m.label}
+            <Icon className="w-3.5 h-3.5" /> {m.label}
           </button>
         );
       })}

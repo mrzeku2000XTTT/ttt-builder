@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings, MoreHorizontal } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings, MoreHorizontal, X, SlidersHorizontal } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -216,40 +216,6 @@ const HTML_TO_REACT_DIRECTIVE = `CONVERSION TASK — turn the pasted HTML below 
 - Make it a working app, not a static shell: real React state, working forms with validation, mobile nav that opens/closes, and any data shown must be fetched live per the LIVE DATA rules.
 - Keep the mandatory TTT Kaspa wallet widget in the header.`;
 
-function DropMenu({ label, align = "left", dark, children }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const onDoc = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  return (
-    <div ref={ref} className="relative flex-shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-bold border transition-colors ${
-          dark
-            ? "bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
-            : "bg-white border-black/10 text-[#10231c] hover:border-black/25"
-        }`}
-      >
-        <MoreHorizontal className="w-3.5 h-3.5" /> {label}
-      </button>
-      {open && (
-        <div
-          className={`absolute z-40 mb-2 w-56 rounded-xl border shadow-lg p-2 flex flex-col gap-1 ${
-            align === "right" ? "right-0" : "left-0"
-          } ${dark ? "bottom-auto top-full mt-2 bg-[#161b22] border-white/10" : "bottom-full bg-white border-black/10"}`}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const MODE_DIRECTIVE = {
   html: `\n\nLOCKED MODE: STATIC MODE (A). The user explicitly chose HTML mode.
 - Use ONLY vanilla HTML/CSS/JS. NO package.json, NO npm, NO React/JSX, NO build step.
@@ -362,6 +328,8 @@ function TTTBuilderStudio() {
   const [chatCollapsed, setChatCollapsed] = useState(() => {
     try { return localStorage.getItem("ttt_builder_chat_collapsed") === "1"; } catch { return false; }
   });
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [showProjects, setShowProjects] = useState(false);
   const [projectId, setProjectId] = useState(() => {
@@ -882,7 +850,7 @@ function TTTBuilderStudio() {
             <div className={`flex-1 grid min-h-0 w-full max-w-full overflow-hidden ${chatCollapsed ? "lg:grid-cols-[1fr]" : "lg:grid-cols-[380px_1fr]"}`}>
 
               {/* Left: Chat */}
-              <div className={`flex flex-col border-r border-black/[0.06] min-h-0 min-w-0 overflow-hidden bg-white ${chatCollapsed ? "lg:hidden" : ""} ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
+              <div className={`relative flex flex-col border-r border-black/[0.06] min-h-0 min-w-0 overflow-hidden bg-white ${chatCollapsed ? "lg:hidden" : ""} ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
                 <div className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-2">
                   <BuilderOrb size={30} />
                   <div>
@@ -921,41 +889,67 @@ function TTTBuilderStudio() {
                   <div ref={chatEndRef} />
                 </div>
 
-                <div className="p-3 border-t border-black/[0.06] bg-[#f4f6f3]">
+                <div className="p-3 border-t border-black/[0.06] bg-white/80 backdrop-blur-xl">
                   <ChatDropZone attachments={attachments} onChange={setAttachments} disabled={loading}>
                   <form
                     onSubmit={e => { e.preventDefault(); generate(prompt); }}
-                    className="flex items-center gap-1 bg-white border border-black/10 focus-within:border-[#2ee37a] rounded-xl pl-1 pr-1.5 py-1"
+                    className="flex items-end gap-1 bg-[#f4f6f3] focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(124,255,154,0.55)] rounded-2xl pl-1 pr-1.5 py-1.5 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
                   >
                     <AttachButton compact attachments={attachments} onChange={setAttachments} disabled={loading} />
-                    <input
+                    <textarea
                       value={prompt}
                       onChange={e => setPrompt(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(prompt); } }}
                       placeholder="Describe an agentic Kaspa app…"
                       disabled={loading}
-                      className="flex-1 min-w-0 bg-transparent outline-none text-[#10231c] placeholder:text-[#8a9a93] text-sm py-1.5"
+                      rows={2}
+                      className="flex-1 min-w-0 bg-transparent outline-none text-[#10231c] placeholder:text-[#8a9a93] text-sm py-1.5 resize-none leading-relaxed"
                     />
                     <button
                       type="submit"
                       disabled={loading || !prompt.trim()}
-                      className="w-8 h-8 rounded-lg bg-[#7CFF9A] text-[#062014] flex items-center justify-center disabled:opacity-30 hover:bg-[#6af08b] transition-colors flex-shrink-0"
+                      className="mb-0.5 w-8 h-8 rounded-full bg-[#7CFF9A] text-[#062014] flex items-center justify-center disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] flex-shrink-0"
                     >
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     </button>
                   </form>
 
-                  <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                  <div className="mt-2.5 space-y-2">
                     <ChatModeToggle value={chatMode} onChange={setChatMode} disabled={loading} />
-                    <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
-                    <ModelSelector value={model} onChange={changeModel} disabled={loading} onOpenSettings={openSettings} />
-                    <details className="relative flex-shrink-0">
-                      <summary className="list-none flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[11px] font-bold text-[#10231c] hover:border-black/25 cursor-pointer [&::-webkit-details-marker]:hidden">
-                        <MoreHorizontal className="w-3.5 h-3.5" /> Tools
-                      </summary>
-                      <div className="absolute bottom-full left-0 mb-2 z-40 w-56 rounded-xl bg-white border border-black/10 shadow-lg p-2 flex flex-col gap-1">
-                        <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
+                    <div className="grid grid-cols-2 gap-2 min-w-0">
+                      <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
+                      <ModelSelector value={model} onChange={changeModel} disabled={loading} onOpenSettings={openSettings} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 min-w-0">
+                      <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
+                      <button
+                        type="button"
+                        onClick={() => setToolsOpen(true)}
+                        className="flex items-center justify-center gap-1.5 h-8 rounded-full bg-[#f4f6f3] text-[11px] font-semibold text-[#10231c] hover:bg-[#eef1ee] transition-colors"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" /> Tools
+                      </button>
+                    </div>
+                  </div>
+                  </ChatDropZone>
+
+                  <motion.div
+                    initial={false}
+                    animate={{ opacity: toolsOpen ? 1 : 0, y: toolsOpen ? 0 : 12 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    className={`absolute inset-x-3 bottom-3 z-50 ${toolsOpen ? "" : "pointer-events-none"}`}
+                  >
+                    <button type="button" aria-label="Close tools" onClick={() => setToolsOpen(false)} className={`absolute -top-[100vh] inset-x-0 h-[100vh] ${toolsOpen ? "" : "hidden"}`} />
+                    <div className="rounded-2xl bg-white/95 backdrop-blur-xl border border-black/5 shadow-[0_16px_50px_rgba(16,35,28,0.16)] p-3">
+                      <div className="flex items-center justify-between px-1 pb-2">
+                        <div className="text-sm font-semibold">Tools</div>
+                        <button type="button" onClick={() => setToolsOpen(false)} className="h-8 w-8 rounded-full bg-black/[0.06] flex items-center justify-center">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5">
                         <CloneUrlButton onClone={cloneWebsite} disabled={loading} />
-                        <DesignOptionsButton prompt={prompt} onPick={(hint) => generate(`${hint}\n\n${prompt}`)} disabled={loading} />
+                        <DesignOptionsButton prompt={prompt} onPick={(hint) => { setToolsOpen(false); generate(`${hint}\n\n${prompt}`); }} disabled={loading} />
                         <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
                         <EnhanceButton
                           prompt={prompt}
@@ -964,94 +958,108 @@ function TTTBuilderStudio() {
                           hasProject={files.length > 0}
                           disabled={loading}
                         />
-                        <div className="h-px bg-black/10 my-1" />
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-1.5">
                         {["Make it darker", "Add pricing", "More motion", "Contact form", "Mobile-perfect"].map((action) => (
                           <button
                             key={action}
                             type="button"
-                            onClick={() => generate(action)}
+                            onClick={() => { setToolsOpen(false); generate(action); }}
                             disabled={loading || !html}
-                            className="text-left text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-[#5a6b64] hover:bg-black/5 disabled:opacity-30"
+                            className="h-9 rounded-full bg-[#f4f6f3] text-[11px] font-semibold text-[#5a6b64] hover:text-[#10231c] disabled:opacity-30 transition-colors"
                           >
                             {action}
                           </button>
                         ))}
                       </div>
-                    </details>
-                  </div>
-                  </ChatDropZone>
+                    </div>
+                  </motion.div>
                 </div>
               </div>
 
               {/* Right: Preview / Dashboard */}
               <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0f1613] relative ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
                 {/* Top-level toggle: Preview | Dashboard */}
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10 flex-shrink-0 overflow-x-auto scrollbar-hide bg-[#0f1613] text-white">
-                  {/* Chat collapse/expand toggle — always visible in the preview toolbar */}
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10 flex-shrink-0 min-w-0 bg-[#0f1613] text-white">
                   <button
                     onClick={() => setChatCollapsed(v => !v)}
-                    className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0"
-                    title={chatCollapsed ? "Show chat" : "Hide chat — expand preview"}
+                    className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors flex-shrink-0"
+                    title={chatCollapsed ? "Show chat" : "Hide chat"}
                   >
-                    {chatCollapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
-                    <span className="hidden xl:inline">{chatCollapsed ? "Chat" : "Hide chat"}</span>
+                    {chatCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
                   </button>
-                  <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
+                  <div className="flex gap-0.5 bg-white/5 rounded-full p-0.5 flex-shrink-0">
                     <button
                       onClick={() => setTopTab("preview")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-semibold transition-all duration-200 ${topTab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Eye className="w-3 h-3" /> Preview
+                      <Eye className="w-3.5 h-3.5" /> Preview
                     </button>
                     <button
                       onClick={() => setTopTab("dashboard")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "dashboard" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-semibold transition-all duration-200 ${topTab === "dashboard" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> Dashboard
+                      <Code2 className="w-3.5 h-3.5" /> Code
                     </button>
                   </div>
-                  <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                    <div className="hidden lg:flex gap-1 bg-white/5 rounded-lg p-0.5">
-                      <button
-                        onClick={() => setDevice("desktop")}
-                        className={`flex items-center px-2 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
-                        title="Desktop preview"
-                      >
-                        <Monitor className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setDevice("mobile")}
-                        className={`flex items-center px-2 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
-                        title="Mobile preview"
-                      >
-                        <Smartphone className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  <div className="ml-auto flex items-center gap-1 min-w-0 flex-shrink-0">
+                    <button
+                      onClick={() => setDevice("desktop")}
+                      className={`hidden sm:flex items-center justify-center h-8 w-8 rounded-full transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                      title="Desktop"
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDevice("mobile")}
+                      className={`hidden sm:flex items-center justify-center h-8 w-8 rounded-full transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                      title="Mobile"
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => setShowFullscreen(true)}
                       disabled={!html}
-                      className="flex items-center h-7 w-7 justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white disabled:opacity-30"
+                      className="flex items-center h-8 w-8 justify-center rounded-full hover:bg-white/10 text-white/60 hover:text-white disabled:opacity-30"
                       title="Fullscreen"
                     >
                       <Maximize2 className="w-3.5 h-3.5" />
                     </button>
                     <GitHubSyncIndicator autosync={autosync} disabled={loading} />
-                    <DropMenu label="Share" align="right" dark>
-                      <button type="button" onClick={() => generate("Regenerate with the same concept but different design")} disabled={loading || !html} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 disabled:opacity-30 text-left">
-                        <RefreshCw className="w-3.5 h-3.5" /> Remix
-                      </button>
-                      <button type="button" onClick={downloadHtml} disabled={!html} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 disabled:opacity-30 text-left">
-                        <Globe className="w-3.5 h-3.5" /> Export HTML
-                      </button>
-                      <button type="button" onClick={() => setShowPushGithubModal(true)} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 text-left">
-                        <GitBranch className="w-3.5 h-3.5" /> Push to GitHub
-                      </button>
-                      <button type="button" onClick={() => setShowPushStoreModal(true)} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-[#7CFF9A] hover:bg-white/10 text-left">
-                        <Store className="w-3.5 h-3.5" /> Push to Store
-                      </button>
-                    </DropMenu>
+                    <button
+                      type="button"
+                      onClick={() => setShareOpen((o) => !o)}
+                      className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white"
+                      title="Share"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
+                <AnimatePresence>
+                  {shareOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                      className="absolute right-3 top-12 z-40 w-56 rounded-2xl bg-[#1a221f]/95 backdrop-blur-xl border border-white/10 shadow-xl p-2"
+                    >
+                      <button type="button" onClick={() => { setShareOpen(false); generate("Regenerate with the same concept but different design"); }} disabled={loading || !html} className="flex items-center gap-2 w-full h-10 px-3 rounded-xl text-[13px] font-semibold text-white/85 hover:bg-white/10 disabled:opacity-30 text-left">
+                        <RefreshCw className="w-4 h-4" /> Remix
+                      </button>
+                      <button type="button" onClick={() => { setShareOpen(false); downloadHtml(); }} disabled={!html} className="flex items-center gap-2 w-full h-10 px-3 rounded-xl text-[13px] font-semibold text-white/85 hover:bg-white/10 disabled:opacity-30 text-left">
+                        <Globe className="w-4 h-4" /> Export HTML
+                      </button>
+                      <button type="button" onClick={() => { setShareOpen(false); setShowPushGithubModal(true); }} className="flex items-center gap-2 w-full h-10 px-3 rounded-xl text-[13px] font-semibold text-white/85 hover:bg-white/10 text-left">
+                        <GitBranch className="w-4 h-4" /> Push to GitHub
+                      </button>
+                      <button type="button" onClick={() => { setShareOpen(false); setShowPushStoreModal(true); }} className="flex items-center gap-2 w-full h-10 px-3 rounded-xl text-[13px] font-semibold text-[#7CFF9A] hover:bg-white/10 text-left">
+                        <Store className="w-4 h-4" /> Push to Store
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Content */}
                 <div className="flex-1 min-h-0 relative">

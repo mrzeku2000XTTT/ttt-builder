@@ -53,17 +53,17 @@ export default function ModelSelector({ value, onChange, disabled, variant = "da
 
   return (
     <>
-      <label className={`flex items-center gap-1.5 h-8 pl-2 pr-1 rounded-lg transition-colors cursor-pointer ${
+      <label className={`flex items-center gap-1.5 h-8 min-w-0 w-full pl-2.5 pr-2 rounded-full transition-colors cursor-pointer ${
         isLight
           ? "bg-transparent border border-transparent text-[#5a554f] hover:text-[#1a1614]"
-          : "bg-white border border-black/10 text-[#10231c] hover:border-black/25"
+          : "bg-[#f4f6f3] text-[#10231c]"
       }`}>
         <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
         <select
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           disabled={disabled}
-          className={`bg-transparent outline-none text-[11px] font-bold cursor-pointer disabled:opacity-40 max-w-[170px] ${
+          className={`bg-transparent outline-none text-[11px] font-semibold cursor-pointer disabled:opacity-40 min-w-0 w-full ${
             isLight ? "text-[#1a1614]" : "text-[#10231c]"
           }`}
         >

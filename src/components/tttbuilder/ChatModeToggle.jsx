@@ -11,7 +11,7 @@ const MODES = [
 
 export default function ChatModeToggle({ value, onChange, disabled }) {
   return (
-    <div className="flex items-center gap-0.5 bg-white rounded-lg p-0.5 border border-black/10">
+    <div className="grid grid-cols-3 gap-0.5 w-full bg-[#f4f6f3] rounded-full p-0.5">
       {MODES.map(m => {
         const Icon = m.icon;
         const active = value === m.id;
@@ -22,12 +22,12 @@ export default function ChatModeToggle({ value, onChange, disabled }) {
             onClick={() => onChange(m.id)}
             disabled={disabled}
             title={m.hint}
-            className={`flex items-center gap-1 h-7 px-2.5 rounded-md text-[11px] font-bold transition-colors disabled:opacity-40 ${
-              active ? "bg-[#7CFF9A] text-[#062014]" : "text-[#5a6b64] hover:text-[#10231c]"
+            className={`flex items-center justify-center gap-1 h-8 rounded-full text-[11px] font-semibold transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] disabled:opacity-40 ${
+              active ? "bg-white text-[#10231c] shadow-sm" : "text-[#5a6b64] hover:text-[#10231c]"
             }`}
           >
-            <Icon className="w-3 h-3" />
-            <span className="hidden sm:inline">{m.label}</span>
+            <Icon className="w-3.5 h-3.5" />
+            {m.label}
           </button>
         );
       })}

@@ -53,11 +53,10 @@ export default function GitHubSyncIndicator({ autosync, disabled }) {
       <button
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className={`flex items-center gap-1.5 h-7 px-3 rounded-lg border text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap ${bg} ${color} disabled:opacity-30`}
+        className={`flex items-center justify-center h-8 w-8 rounded-full border text-xs font-bold transition-colors flex-shrink-0 ${bg} ${color} disabled:opacity-30`}
         title="GitHub auto-sync settings"
       >
-        <Icon className={`w-3 h-3 ${syncState === "syncing" ? "animate-spin" : ""}`} />
-        <span className="hidden xl:inline">{label}</span>
+        <Icon className={`w-3.5 h-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
       </button>
 
       <AnimatePresence>
