@@ -1,5 +1,6 @@
 /** OpenAI-compatible chat proxy — bypasses browser CORS for xAI / DeepSeek / OpenAI. */
 export const config = { maxDuration: 60 };
+import { resolveLlmApiKey, hasGrokAuth } from "../llmAuth.js";
 const ALLOWED = [
   "api.x.ai",
   "api.openai.com",
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "content-type, authorization");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method === "GET") return res.status(200).json({ grok: hasGrokAuth() });
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   let body = req.body;
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
   if (!hostOk(baseUrl)) {
     return res.status(400).json({ error: "Provider host is not allowed" });
   }
-  const apiKey = String(body.apiKey || process.env.XAI_API_KEY || process.env.LLM_API_KEY || "").trim();
+  const apiKey = resolveLlmApiKey(body.apiKey);
   const payload = {
     model: body.model,
     messages: body.messages,

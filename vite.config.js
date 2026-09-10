@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { resolveLlmApiKey, hasGrokAuth } from "./llmAuth.js";
 
 const ALLOWED = [
   "api.x.ai",
@@ -37,6 +38,12 @@ function llmProxy() {
           res.end();
           return;
         }
+        if (req.method === "GET") {
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ grok: hasGrokAuth() }));
+          return;
+        }
         if (req.method !== "POST") return next();
         const chunks = [];
         for await (const c of req) chunks.push(c);
@@ -50,7 +57,7 @@ function llmProxy() {
           return;
         }
         try {
-          const apiKey = body.apiKey || process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY || "";
+          const apiKey = resolveLlmApiKey(body.apiKey);
           const r = await fetch(baseUrl + "/chat/completions", {
             method: "POST",
             headers: {
