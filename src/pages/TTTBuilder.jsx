@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings, MoreHorizontal } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -215,6 +215,40 @@ const HTML_TO_REACT_DIRECTIVE = `CONVERSION TASK — turn the pasted HTML below 
 - Split every section of the page into its own component under src/components/ (Navbar, Hero, Features, Pricing, Footer, …), each under ~150 lines. Convert inline <script> logic into React state/effects and <style>/CSS into CSS files imported by the components.
 - Make it a working app, not a static shell: real React state, working forms with validation, mobile nav that opens/closes, and any data shown must be fetched live per the LIVE DATA rules.
 - Keep the mandatory TTT Kaspa wallet widget in the header.`;
+
+function DropMenu({ label, align = "left", dark, children }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const onDoc = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-bold border transition-colors ${
+          dark
+            ? "bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
+            : "bg-white border-black/10 text-[#10231c] hover:border-black/25"
+        }`}
+      >
+        <MoreHorizontal className="w-3.5 h-3.5" /> {label}
+      </button>
+      {open && (
+        <div
+          className={`absolute z-40 mb-2 w-56 rounded-xl border shadow-lg p-2 flex flex-col gap-1 ${
+            align === "right" ? "right-0" : "left-0"
+          } ${dark ? "bottom-auto top-full mt-2 bg-[#161b22] border-white/10" : "bottom-full bg-white border-black/10"}`}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const MODE_DIRECTIVE = {
   html: `\n\nLOCKED MODE: STATIC MODE (A). The user explicitly chose HTML mode.
@@ -891,56 +925,61 @@ function TTTBuilderStudio() {
                   <ChatDropZone attachments={attachments} onChange={setAttachments} disabled={loading}>
                   <form
                     onSubmit={e => { e.preventDefault(); generate(prompt); }}
-                    className="flex items-center gap-2 bg-white border border-black/10 focus-within:border-[#2ee37a] rounded-xl pl-3 pr-1.5 py-1.5"
+                    className="flex items-center gap-1 bg-white border border-black/10 focus-within:border-[#2ee37a] rounded-xl pl-1 pr-1.5 py-1"
                   >
+                    <AttachButton compact attachments={attachments} onChange={setAttachments} disabled={loading} />
                     <input
                       value={prompt}
                       onChange={e => setPrompt(e.target.value)}
                       placeholder="Describe an agentic Kaspa app…"
                       disabled={loading}
-                      className="flex-1 bg-transparent outline-none text-[#10231c] placeholder:text-[#8a9a93] text-sm py-1.5"
+                      className="flex-1 min-w-0 bg-transparent outline-none text-[#10231c] placeholder:text-[#8a9a93] text-sm py-1.5"
                     />
                     <button
                       type="submit"
                       disabled={loading || !prompt.trim()}
-                      className="w-8 h-8 rounded-lg bg-[#7CFF9A] text-[#062014] flex items-center justify-center disabled:opacity-30 hover:bg-[#6af08b] transition-colors"
+                      className="w-8 h-8 rounded-lg bg-[#7CFF9A] text-[#062014] flex items-center justify-center disabled:opacity-30 hover:bg-[#6af08b] transition-colors flex-shrink-0"
                     >
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     </button>
                   </form>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
                     <ChatModeToggle value={chatMode} onChange={setChatMode} disabled={loading} />
                     <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
-                    <ModelSelector value={model} onChange={changeModel} disabled={loading} />
-                    <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
-                    <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
-                    <CloneUrlButton onClone={cloneWebsite} disabled={loading} />
-                    <DesignOptionsButton prompt={prompt} onPick={(hint) => generate(`${hint}\n\n${prompt}`)} disabled={loading} />
-                    <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
-                    <EnhanceButton
-                      prompt={prompt}
-                      onEnhanced={setPrompt}
-                      buildMode={buildMode}
-                      hasProject={files.length > 0}
-                      disabled={loading}
-                    />
+                    <ModelSelector value={model} onChange={changeModel} disabled={loading} onOpenSettings={openSettings} />
+                    <details className="relative flex-shrink-0">
+                      <summary className="list-none flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[11px] font-bold text-[#10231c] hover:border-black/25 cursor-pointer [&::-webkit-details-marker]:hidden">
+                        <MoreHorizontal className="w-3.5 h-3.5" /> Tools
+                      </summary>
+                      <div className="absolute bottom-full left-0 mb-2 z-40 w-56 rounded-xl bg-white border border-black/10 shadow-lg p-2 flex flex-col gap-1">
+                        <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
+                        <CloneUrlButton onClone={cloneWebsite} disabled={loading} />
+                        <DesignOptionsButton prompt={prompt} onPick={(hint) => generate(`${hint}\n\n${prompt}`)} disabled={loading} />
+                        <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
+                        <EnhanceButton
+                          prompt={prompt}
+                          onEnhanced={setPrompt}
+                          buildMode={buildMode}
+                          hasProject={files.length > 0}
+                          disabled={loading}
+                        />
+                        <div className="h-px bg-black/10 my-1" />
+                        {["Make it darker", "Add pricing", "More motion", "Contact form", "Mobile-perfect"].map((action) => (
+                          <button
+                            key={action}
+                            type="button"
+                            onClick={() => generate(action)}
+                            disabled={loading || !html}
+                            className="text-left text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-[#5a6b64] hover:bg-black/5 disabled:opacity-30"
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
                   </div>
                   </ChatDropZone>
-
-                  {/* Quick actions */}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {["Make it darker", "Add pricing section", "More animations", "Add contact form", "Make it mobile-perfect"].map(action => (
-                      <button
-                        key={action}
-                        onClick={() => generate(action)}
-                        disabled={loading || !html}
-                        className="text-[10px] px-2 py-1 rounded-full border border-black/10 text-[#5a6b64] hover:text-[#10231c] hover:border-black/25 disabled:opacity-30 transition-colors"
-                      >
-                        {action}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -971,59 +1010,46 @@ function TTTBuilderStudio() {
                       <Code2 className="w-3 h-3" /> Dashboard
                     </button>
                   </div>
-                  <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-                    {html && topTab === "preview" && (
-                      <>
-                        <div className="hidden lg:flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
-                          <button
-                            onClick={() => setDevice("desktop")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
-                            title="Desktop preview"
-                          >
-                            <Monitor className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => setDevice("mobile")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
-                            title="Mobile preview"
-                          >
-                            <Smartphone className="w-3 h-3" />
-                          </button>
-                          </div>
-                          <button
-                            onClick={() => setShowFullscreen(true)}
-                            className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
-                            title="Open fullscreen preview"
-                          >
-                            <Maximize2 className="w-3 h-3" /> Fullscreen
-                          </button>
-                        <button
-                          onClick={() => generate("Regenerate with the same concept but different design")}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
-                        >
-                          <RefreshCw className="w-3 h-3" /> Remix
-                        </button>
-                        <button
-                          onClick={downloadHtml}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
-                        >
-                          <Globe className="w-3 h-3" /> Export
-                        </button>
-                        <GitHubSyncIndicator autosync={autosync} disabled={loading} />
-                        <button
-                          onClick={() => setShowPushGithubModal(true)}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
-                        >
-                          <GitBranch className="w-3 h-3" /> GitHub
-                        </button>
-                        <button
-                          onClick={() => setShowPushStoreModal(true)}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors flex-shrink-0 whitespace-nowrap"
-                        >
-                          <Store className="w-3 h-3" /> Push to Store
-                        </button>
-                      </>
-                    )}
+                  <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+                    <div className="hidden lg:flex gap-1 bg-white/5 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setDevice("desktop")}
+                        className={`flex items-center px-2 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                        title="Desktop preview"
+                      >
+                        <Monitor className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDevice("mobile")}
+                        className={`flex items-center px-2 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                        title="Mobile preview"
+                      >
+                        <Smartphone className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setShowFullscreen(true)}
+                      disabled={!html}
+                      className="flex items-center h-7 w-7 justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white disabled:opacity-30"
+                      title="Fullscreen"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                    <GitHubSyncIndicator autosync={autosync} disabled={loading} />
+                    <DropMenu label="Share" align="right" dark>
+                      <button type="button" onClick={() => generate("Regenerate with the same concept but different design")} disabled={loading || !html} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 disabled:opacity-30 text-left">
+                        <RefreshCw className="w-3.5 h-3.5" /> Remix
+                      </button>
+                      <button type="button" onClick={downloadHtml} disabled={!html} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 disabled:opacity-30 text-left">
+                        <Globe className="w-3.5 h-3.5" /> Export HTML
+                      </button>
+                      <button type="button" onClick={() => setShowPushGithubModal(true)} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-white/80 hover:bg-white/10 text-left">
+                        <GitBranch className="w-3.5 h-3.5" /> Push to GitHub
+                      </button>
+                      <button type="button" onClick={() => setShowPushStoreModal(true)} className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[11px] font-bold text-[#7CFF9A] hover:bg-white/10 text-left">
+                        <Store className="w-3.5 h-3.5" /> Push to Store
+                      </button>
+                    </DropMenu>
                   </div>
                 </div>
 

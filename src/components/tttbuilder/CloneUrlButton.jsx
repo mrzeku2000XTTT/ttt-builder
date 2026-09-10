@@ -46,7 +46,7 @@ export default function CloneUrlButton({ onClone, disabled }) {
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-blue-500/15 border border-blue-400/40 text-blue-200 text-[11px] font-bold hover:bg-blue-500/25 disabled:opacity-40 transition-colors"
+        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[#10231c] text-[11px] font-bold hover:border-black/25 disabled:opacity-40 transition-colors w-full justify-start"
         title="Clone any website by URL"
       >
         <Globe className="w-3 h-3" /> Clone URL

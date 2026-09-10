@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 
 const isImage = (name) => /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(name);
 
-export default function AttachButton({ attachments, onChange, disabled }) {
+export default function AttachButton({ attachments, onChange, disabled, compact }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
@@ -29,15 +29,15 @@ export default function AttachButton({ attachments, onChange, disabled }) {
         onClick={() => inputRef.current?.click()}
         disabled={disabled || busy}
         title="Attach images or files (screenshots, designs, data)"
-        className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] hover:bg-[#70C7BA]/25 text-[11px] font-bold disabled:opacity-40 transition-colors"
+        className="flex items-center justify-center h-8 w-8 rounded-lg text-[#5a6b64] hover:bg-black/5 disabled:opacity-40 transition-colors"
       >
-        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
-        Attach file
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+        {!compact && "Attach"}
       </button>
       <input ref={inputRef} type="file" multiple onChange={pick} className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.json,.csv,.html,.htm,.js,.jsx,.ts,.tsx,.css,.scss,.md,.markdown,.xml,.svg,.yaml,.yml,.sql,.py,.go,.rs,.java,.c,.cpp,.h,.sh,.toml" />
 
       {attachments.map((a, i) => (
-        <span key={a.url + i} className="flex items-center gap-1.5 h-7 pl-1.5 pr-1 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white/60">
+        <span key={a.url + i} className="flex items-center gap-1.5 h-7 pl-1.5 pr-1 rounded-lg bg-black/5 border border-black/10 text-[10px] text-[#5a6b64]">
           {a.image && <img src={a.url} alt="" className="w-4 h-4 rounded object-cover" />}
           <span className="max-w-[90px] truncate">{a.name}</span>
           <button

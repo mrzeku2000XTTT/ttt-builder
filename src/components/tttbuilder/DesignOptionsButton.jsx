@@ -67,7 +67,7 @@ Return JSON: { "options": [{ "name": "...", "description": "...", "colors": ["#.
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled || !prompt?.trim()}
-        className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-purple-500/15 border border-purple-400/40 text-purple-200 text-[11px] font-bold hover:bg-purple-500/25 disabled:opacity-40 transition-colors"
+        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[#10231c] text-[11px] font-bold hover:border-black/25 disabled:opacity-40 transition-colors w-full justify-start"
         title="Show 4 design directions to pick from"
       >
         <LayoutGrid className="w-3 h-3" /> Designs

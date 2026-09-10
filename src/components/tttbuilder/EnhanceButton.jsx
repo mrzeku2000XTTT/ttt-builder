@@ -24,7 +24,7 @@ export default function EnhanceButton({ prompt, onEnhanced, buildMode, hasProjec
       onClick={run}
       disabled={disabled || busy || !prompt.trim()}
       title="Enhance my prompt"
-      className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold text-white/60 hover:text-white hover:border-[#70C7BA]/40 disabled:opacity-30 transition-colors"
+      className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[11px] font-bold text-[#10231c] hover:border-black/25 disabled:opacity-40 transition-colors w-full justify-start"
     >
       {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
       {busy ? "Enhancing…" : "Enhance"}

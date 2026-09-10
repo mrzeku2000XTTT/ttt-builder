@@ -20,6 +20,19 @@ function Collapsible({ icon: Icon, label, children, defaultOpen = false }) {
   );
 }
 
+function Md({ text }) {
+  const html = String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^#### (.+)$/gm, '<div class="text-[11px] font-bold mt-3 mb-1 text-[#10231c]">$1</div>')
+    .replace(/^### (.+)$/gm, '<div class="text-sm font-semibold mt-3 mb-1 text-[#10231c]">$1</div>')
+    .replace(/`([^`]+)`/g, '<code class="text-[11px] bg-black/5 px-1 py-0.5 rounded font-mono">$1</code>')
+    .replace(/^\d+\.\s/gm, "• ")
+    .replace(/\n/g, "<br/>");
+  return <div className="leading-relaxed text-sm [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 export default function ChatMessage({ message }) {
   const isUser = message.role === "user";
   const thinking = message.thinking || [];
@@ -38,7 +51,7 @@ export default function ChatMessage({ message }) {
   return (
     <div className="flex justify-start">
       <div className="max-w-[92%] w-full rounded-2xl px-4 py-3 text-sm bg-[#f4f6f3] border border-black/[0.06] text-[#10231c]">
-        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        <Md text={message.content} />
 
         {message.activity?.length > 0 && <ActivityTimeline items={message.activity} />}
 

@@ -18,7 +18,7 @@ export default function PasteHtmlButton({ onConvert, disabled }) {
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-purple-500/15 border border-purple-400/40 text-purple-200 text-xs font-bold hover:bg-purple-500/25 disabled:opacity-40 transition-colors"
+        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[#10231c] text-[11px] font-bold hover:border-black/25 disabled:opacity-40 transition-colors w-full justify-start"
         title="Paste HTML and convert it into a full React app"
       >
         <Code2 className="w-3.5 h-3.5" />
